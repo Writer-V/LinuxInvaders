@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TieredCompilation>false</TieredCompilation>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>../LinuxInvaders.Core/Content/Icon.ico</ApplicationIcon>
+    <AssemblyName>LinuxInvaders</AssemblyName>
+    <AssemblyTitle>LinuxInvaders</AssemblyTitle>
+  </PropertyGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="..\LinuxInvaders.Core\Content\LinuxInvaders.mgcb">
+      <Link>Content\LinuxInvaders.mgcb</Link>
+    </MonoGameContentReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LinuxInvaders.Core\LinuxInvaders.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
+  </ItemGroup>
+</Project>
