@@ -2,4 +2,13 @@ bin/
 obj/
 .vs/
 *.user
-.vscode/settings.json
+.vscode/
+.claude/
+
+!LinuxInvaders/
+!LinuxInvaders/LinuxInvaders.Core/
+!LinuxInvaders/LinuxInvaders.Core/Content/
+!LinuxInvaders/LinuxInvaders.Core/Content/bin/
+!LinuxInvaders/LinuxInvaders.Core/Content/bin/**
+LinuxInvaders/LinuxInvaders.Core/Content/obj
+LinuxInvaders/LinuxInvaders.Core/Content/obj/**

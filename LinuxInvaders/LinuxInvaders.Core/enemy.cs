@@ -15,8 +15,12 @@ namespace LinuxInvaders.Core
 		int windowSizeY;
 		public event EventHandler ReachedBottom;
 
-		// False once this enemy has left play; the game sweeps these out of its list.
+		// Should it exist?
 		public bool IsActive { get; private set; } = true;
+
+		// Collision box TODO: Make into something more accurate.
+		public Rectangle Bounds => new Rectangle((int)pos.X, (int)pos.Y,
+			enemyTexture.FrameWidth, enemyTexture.FrameHeight);
 
 		public Enemy(AnimatedTexture enemyTexture, Vector2 pos, int windowSizeX, int windowSizeY)
 		{
@@ -37,11 +41,16 @@ namespace LinuxInvaders.Core
 			pos.Y += 1;
 			if (pos.Y > windowSizeY)
 			{
-				// Set this before invoking: the handler runs synchronously and
-				// should already see the enemy as out of play.
+				// Mark for removal and throw an event, just in case.
 				IsActive = false;
 				ReachedBottom?.Invoke(this, EventArgs.Empty);
 			}
+		}
+
+		// Mark for removal.
+		public void Deactivate()
+		{
+			IsActive = false;
 		}
 
 		public void Draw(SpriteBatch spriteBatch)

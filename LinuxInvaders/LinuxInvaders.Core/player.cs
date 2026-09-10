@@ -14,6 +14,13 @@ namespace LinuxInvaders.Core
 		private int windowSizeX;
 		public int RemainingLives { get; private set; } = 3;
 		public event EventHandler OutOfLives;
+		public event EventHandler Fired;
+
+		// Last frame's keyboard
+		private KeyboardState previousKeyboard;
+
+		// Where a shot leaves the player: top edge, horizontally centred.
+		public Vector2 MuzzlePosition => new Vector2(pos.X + texture.FrameWidth / 2f, pos.Y);
 
 		public PlayerChar(AnimatedTexture texture, Vector2 pos, int windowSizeX)
 		{
@@ -27,14 +34,22 @@ namespace LinuxInvaders.Core
 			//Get the animation to move along
 			texture.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
 
+			KeyboardState keyboard = Keyboard.GetState();
+
 			// Update player logic here (e.g., movement, animation)
-			if ((Keyboard.GetState().IsKeyDown(Keys.Left)) || (Keyboard.GetState().IsKeyDown(Keys.A)))
+			if (keyboard.IsKeyDown(Keys.Left) || keyboard.IsKeyDown(Keys.A))
 				pos.X -= 5;
-			if ((Keyboard.GetState().IsKeyDown(Keys.Right)) || (Keyboard.GetState().IsKeyDown(Keys.D)))
+			if (keyboard.IsKeyDown(Keys.Right) || keyboard.IsKeyDown(Keys.D))
 				pos.X += 5;
 
 			// Keep the player within the window bounds.
 			pos.X = MathHelper.Clamp(pos.X, 0, windowSizeX - texture.FrameWidth);
+
+			// Fire on the frame Space goes down, not every frame it's held.
+			if (keyboard.IsKeyDown(Keys.Space) && !previousKeyboard.IsKeyDown(Keys.Space))
+				Fired?.Invoke(this, EventArgs.Empty);
+
+			previousKeyboard = keyboard;
 		}
 
 		public void Damage(int amount = 1)

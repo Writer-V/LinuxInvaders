@@ -20,16 +20,17 @@ namespace LinuxInvaders.Core.AnimatedSprite
 		public int FrameWidth { get; private set; }
 		public int FrameHeight { get; private set; }
 
+		// Which row of a multi-row sheet to animate. 0 for a single strip.
+		public int Row { get; private set; }
+
 		// Total amount of time the animation has been running.
 		private float totalElapsed;
 
 		// Is the animation currently running?
 		public bool IsRunning { get; private set; }
 
-		// The current rotation, scale and draw depth for the animation. Possibly for future use, but not currently used in the game.
+		// For getting the sprite with complicated parameters.
 		private float rotation, scale, depth;
-
-		// The origin point of the animated texture. Same about the future.
 		private Vector2 origin;
 
 		public AnimatedTexture(Vector2 origin = default(Vector2), float rotation = 0f, float scale = 1f, float depth = 0f)
@@ -40,10 +41,14 @@ namespace LinuxInvaders.Core.AnimatedSprite
 			this.depth = depth;
 		}
 
-		public void Load(Texture2D texture, int frameCount = 1, int framesPerSec = 1, int frameWidth = 0, int frameHeight = 0)
+		// Set centerOrigin when the sprite rotates: it makes rotation spin the sprite
+		// in place, but also makes the position passed to Draw mean the sprite's
+		// centre rather than its top-left corner.
+		public void Load(Texture2D texture, int frameCount = 1, int framesPerSec = 1, int frameWidth = 0, int frameHeight = 0, int row = 0, bool centerOrigin = false)
 		{
 			this.frameCount = frameCount;
 			this.texture = texture;
+			this.Row = row;
 			if (frameWidth == 0)
 				this.FrameWidth = texture.Width / frameCount;
 			else
@@ -52,6 +57,10 @@ namespace LinuxInvaders.Core.AnimatedSprite
 				this.FrameHeight = texture.Height;
 			else
 				this.FrameHeight = frameHeight;
+
+			// Must come after FrameWidth/FrameHeight are known.
+			if (centerOrigin)
+				origin = new Vector2(FrameWidth / 2f, FrameHeight / 2f);
 
 			timePerFrame = (float)1 / framesPerSec;
 			Frame = 0;
@@ -80,7 +89,7 @@ namespace LinuxInvaders.Core.AnimatedSprite
 
 		public void DrawFrame(SpriteBatch batch, int frame, Vector2 screenPos)
 		{
-			Rectangle sourceRect = new Rectangle(FrameWidth * frame, 0,
+			Rectangle sourceRect = new Rectangle(FrameWidth * frame, FrameHeight * Row,
 				FrameWidth, FrameHeight);
 			batch.Draw(texture, screenPos, sourceRect, Color.White,
 				rotation, origin, scale, SpriteEffects.None, depth);
