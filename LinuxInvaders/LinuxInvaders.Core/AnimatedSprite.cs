@@ -1,114 +1,111 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System.Collections.Generic;
-using LinuxInvaders.Core;
 
 namespace LinuxInvaders.Core.AnimatedSprite
 {
-	public class AnimatedSprite
+	public class AnimatedTexture
 	{
-		public Texture2D texture { get; private set; }
-		public int frameWidth { get; private set; }
-		public int frameHeight { get; private set; }
-		public int frameCount { get; private set; }
-		public float frameTime { get; private set; }
-		public int currentFrame { get; private set; }
-		private float elapsedTime, rotation, scale, depth;
-		private Vector2 position;
-		private bool isLooping, isPlaying;
+		// Number of frames in the animation.
+		private int frameCount;
 
-		public AnimatedSprite(Texture2D texture, Vector2 position = Vector2.Zero, int frameWidth = 0, int frameHeight = 0, int frameCount = 1 , float frameTime = 0.1f)
+		// The animation texture.
+		private Texture2D texture;
+
+		// The number of frames to draw per second.
+		private float timePerFrame;
+
+		// The frame width, height, and current frame being drawn.
+		public int Frame { get; private set; }
+		public int FrameWidth { get; private set; }
+		public int FrameHeight { get; private set; }
+
+		// Total amount of time the animation has been running.
+		private float totalElapsed;
+
+		// Is the animation currently running?
+		public bool IsRunning { get; private set; }
+
+		// The current rotation, scale and draw depth for the animation. Possibly for future use, but not currently used in the game.
+		private float rotation, scale, depth;
+
+		// The origin point of the animated texture. Same about the future.
+		private Vector2 origin;
+
+		public AnimatedTexture(Vector2 origin = default(Vector2), float rotation = 0f, float scale = 1f, float depth = 0f)
 		{
-			this.texture = texture;
-			this.frameCount = frameCount;
-			this.frameTime = frameTime;
-			this.currentFrame = 0;
-			this.elapsedTime = 0f;
-			this.rotation = 0f;
-			this.scale = 1f;
-			this.depth = 0f;
-			this.position = position;
-			this.isLooping = true;
-			this.isPlaying = true;
-
-			if (frameWidth == 0)
-				this.frameWidth = texture.Width / frameCount;
-			else
-				this.frameWidth = frameWidth;
-			if (frameHeight == 0)
-				this.frameHeight = texture.Height / frameCount;
-			else
-				this.frameHeight = frameHeight;
+			this.origin = origin;
+			this.rotation = rotation;
+			this.scale = scale;
+			this.depth = depth;
 		}
 
-		public void Update(GameTime gameTime)
+		public void Load(Texture2D texture, int frameCount = 1, int framesPerSec = 1, int frameWidth = 0, int frameHeight = 0)
 		{
-			if (!isPlaying)
+			this.frameCount = frameCount;
+			this.texture = texture;
+			if (frameWidth == 0)
+				this.FrameWidth = texture.Width / frameCount;
+			else
+				this.FrameWidth = frameWidth;
+			if (frameHeight == 0)
+				this.FrameHeight = texture.Height;
+			else
+				this.FrameHeight = frameHeight;
+
+			timePerFrame = (float)1 / framesPerSec;
+			Frame = 0;
+			totalElapsed = 0;
+			IsRunning = true;
+		}
+
+		public void Update(float elapsed)
+		{
+			if (!IsRunning)
 				return;
-
-			elapsedTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-			if (elapsedTime >= frameTime)
+			totalElapsed += elapsed;
+			while (totalElapsed > timePerFrame)
 			{
-				currentFrame++;
-				if (currentFrame >= frameCount)
-				{
-					if (isLooping)
-						currentFrame = 0;
-					else
-						currentFrame = frameCount - 1;
-				}
-				elapsedTime = 0f;
+				Frame++;
+				// Keep the Frame between 0 and the total frames, minus one.
+				Frame %= frameCount;
+				totalElapsed -= timePerFrame;
 			}
 		}
 
-		public void Draw(SpriteBatch spriteBatch)
+		public void Draw(SpriteBatch batch, Vector2 screenPos)
 		{
-			Rectangle sourceRectangle = new Rectangle(currentFrame * frameWidth, 0, frameWidth, frameHeight);
-			spriteBatch.Draw(texture, position, sourceRectangle, Color.White, rotation, Vector2.Zero, scale, SpriteEffects.None, depth);
+			DrawFrame(batch, Frame, screenPos);
 		}
 
-		public void Play()
+		public void DrawFrame(SpriteBatch batch, int frame, Vector2 screenPos)
 		{
-			isPlaying = true;
+			Rectangle sourceRect = new Rectangle(FrameWidth * frame, 0,
+				FrameWidth, FrameHeight);
+			batch.Draw(texture, screenPos, sourceRect, Color.White,
+				rotation, origin, scale, SpriteEffects.None, depth);
 		}
 
-		public void Pause()
+		public void Reset()
 		{
-			isPlaying = false;
+			Frame = 0;
+			totalElapsed = 0f;
 		}
 
 		public void Stop()
 		{
-			isPlaying = false;
-			currentFrame = 0;
-			elapsedTime = 0f;
+			Pause();
+			Reset();
 		}
 
-		public void SetPosition(Vector2 position)
+		public void Play ()
 		{
-			this.position = position;
+			IsRunning = true;
 		}
 
-		public void SetRotation(float rotation)
+		public void Pause()
 		{
-			this.rotation = rotation;
-		}
-
-		public void SetScale(float scale)
-		{
-			this.scale = scale;
-		}
-
-		public void SetDepth(float depth)
-		{
-			this.depth = depth;
-		}
-
-		public void SetLooping(bool isLooping)
-		{
-			this.isLooping = isLooping;
+			IsRunning = false;
 		}
 	}
 }
