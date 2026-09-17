@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System;
-using LinuxInvaders.Core.AnimatedSprite;
 
 namespace LinuxInvaders.Core
 {
@@ -14,7 +13,7 @@ namespace LinuxInvaders.Core
         private List<Enemy> enemies = new List<Enemy>();
         private List<FireBolt> fireBolts = new List<FireBolt>();
         private PlayerChar player;
-        private bool isGameOver = false;
+        private GameState state = GameState.Start;
         private int windowSizeX, windowSizeY;
 
         // Kept around because bolts are built at runtime, not in LoadContent.
@@ -86,29 +85,49 @@ namespace LinuxInvaders.Core
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             
-            if (!isGameOver)
+            switch (state)
             {
-                foreach (var enemy in enemies)
-                {
-                    enemy.Update(gameTime);
-                }
-                player.Update(gameTime);
-
-                foreach (var bolt in fireBolts)
-                {
-                    bolt.Update(gameTime);
-                }
-
-                ResolveBoltHits();
-
-                // Removals after the loop.
-                enemies.RemoveAll(enemy => !enemy.IsActive);
-                fireBolts.RemoveAll(bolt => !bolt.IsActive);
-                Window.Title = $"Invaders - Lives: {player.RemainingLives} - Enemies: {enemies.Count}";
+                case GameState.Start:
+                    UpdateStart(gameTime);
+                    break;
+                case GameState.Playing:
+                    UpdatePlaying(gameTime);
+                    break;
+                case GameState.GameOver:
+                    UpdateGameOver(gameTime);
+                    break;
             }
 
             base.Update(gameTime);
         }
+
+        private void UpdateStart(GameTime gameTime)
+        {}
+
+        private void UpdatePlaying(GameTime gameTime)
+        {
+            foreach (var enemy in enemies)
+            {
+                enemy.Update(gameTime);
+            }
+
+            player.Update(gameTime);
+
+            foreach (var bolt in fireBolts)
+            {
+                bolt.Update(gameTime);
+            }
+
+            ResolveBoltHits();
+
+            // Removals after the loop.
+            enemies.RemoveAll(enemy => !enemy.IsActive);
+            fireBolts.RemoveAll(bolt => !bolt.IsActive);
+            Window.Title = $"Invaders - Lives: {player.RemainingLives} - Enemies: {enemies.Count}";
+        }
+
+        private void UpdateGameOver(GameTime gameTime)
+        {}
 
         private void ResolveBoltHits() // Pulled out of Update
         {
@@ -154,13 +173,31 @@ namespace LinuxInvaders.Core
 
         private void Player_OutOfLives(object sender, System.EventArgs e)
         {
-            isGameOver = true;
+            state = GameState.GameOver;
         }
 
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
+            switch (state)
+            {
+                case GameState.Start:
+                    DrawStart(gameTime);
+                case GameState.Playing:
+                    DrawPlaying(gameTime);
+                case GameState.GameOver;
+                    DrawGameOver(gameTime);
+            }
+
+            base.Draw(gameTime);
+        }
+
+        private void DrawStart(GameTime gameTime)
+        {}
+
+        private void DrawPlaying(GameTime gameTime)
+        {
             _spriteBatch.Begin();
             foreach (var enemy in enemies)
             {
@@ -172,8 +209,9 @@ namespace LinuxInvaders.Core
             }
             player.Draw(_spriteBatch);
             _spriteBatch.End();
-
-            base.Draw(gameTime);
         }
+
+        private void DrawGameOver(GameTime gameTime)
+        {}
     }
 }
