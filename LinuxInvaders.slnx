@@ -1,2 +1,5 @@
 <Solution>
+  <Folder Name="/LinuxInvaders/">
+    <Project Path="LinuxInvaders/LinuxInvaders.Core/LinuxInvaders.Core.csproj" />
+  </Folder>
 </Solution>
