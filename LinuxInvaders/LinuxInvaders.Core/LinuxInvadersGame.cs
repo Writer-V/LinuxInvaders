@@ -184,10 +184,13 @@ namespace LinuxInvaders.Core
             {
                 case GameState.Start:
                     DrawStart(gameTime);
+                    break;
                 case GameState.Playing:
                     DrawPlaying(gameTime);
-                case GameState.GameOver;
+                    break;
+                case GameState.GameOver:
                     DrawGameOver(gameTime);
+                    break;
             }
 
             base.Draw(gameTime);
