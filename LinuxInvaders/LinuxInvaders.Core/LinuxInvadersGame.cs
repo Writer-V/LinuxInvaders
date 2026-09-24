@@ -16,8 +16,17 @@ namespace LinuxInvaders.Core
         private GameState state = GameState.Start;
         private int windowSizeX, windowSizeY;
 
-        // Kept around because bolts are built at runtime, not in LoadContent.
-        private Texture2D fireSheet;
+        // Textures that need to be kept
+        private Texture2D fireSheet; // Player projectile
+        private Texture2D enemyBolt; //Enemy projectile
+        private Texture2D behEnemySheet; //Beholder enemy
+        private Texture2D batEnemySheet; //Bat enemy
+        private Texture owlEnemySheet; //Owl enemy
+        private Texture2D bossEnemySheet; //Boss enemy
+        private Texture2D barrierSheet; //Barrier
+        private Texture2D playerSheet;
+        private Texture2D explosionSheet; //Explosion animation
+        private Texture3D hitPointSheet; //Hit point animation
 
         // Fireball to shoot: 0 orange, 1 purple, 2 green, 3 red, 4 blue
         private int attackRow = 0;
