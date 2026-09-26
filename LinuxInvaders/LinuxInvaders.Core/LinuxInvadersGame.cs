@@ -16,19 +16,17 @@ namespace LinuxInvaders.Core
         private GameState state = GameState.Start;
         private int windowSizeX, windowSizeY;
 
-        // Textures that need to be kept
-        private Texture2D fireSheet; // Player projectile
-        private Texture2D enemyBolt; //Enemy projectile
-        private Texture2D behEnemySheet; //Beholder enemy
-        private Texture2D batEnemySheet; //Bat enemy
-        private Texture owlEnemySheet; //Owl enemy
-        private Texture2D bossEnemySheet; //Boss enemy
+        // Textures that need to be kept around
+        private Texture2D fireSheet; // Player projectile — 4 frames, 5 rows (orange, purple, green, red, blue)
+        private Texture2D enemyBolt; //Enemy projectile — Row 1: creation (6 frames), Row2: travel (3 frames)
+        private Texture2D behEnemySheet; //Beholder enemy — Row 1: idle (14 frames), Row 2: attack (6 frames), Row 3: damaged (5 frames), Row 4: dead (10 frames)
+        private Texture2D batEnemySheet; //Bat enemy — 4 frames
+        private Texture2D owlEnemySheet; //Owl enemy — 5 frames
+        private Texture2D bossEnemySheet; //Boss enemy — 15 frames
         private Texture2D barrierSheet; //Barrier
-        private Texture2D playerSheet;
-        private Texture2D explosionSheet; //Explosion animation
-        private Texture3D hitPointSheet; //Hit point animation
-
-        // Fireball to shoot: 0 orange, 1 purple, 2 green, 3 red, 4 blue
+        private Texture2D playerSheet; //Player — Row 1: Right (12 frames), Row 2: Stand (12 frames), Row 3: Left (11 frames), Row 4: Start screen (12 frames)
+        private Texture2D explosionSheet; //Explosion animation — 13 frames
+        private Texture2D hitPointSheet; // Heart — Row 1: full → empty, Row 2: empty → full
         private int attackRow = 0;
 
         private const int FireBoltFrameCount = 4;
@@ -55,38 +53,62 @@ namespace LinuxInvaders.Core
             windowSizeX = Window.ClientBounds.Width;
             windowSizeY = Window.ClientBounds.Height;
 
-            // Enemy sheet to memory.
+            // Load all the textures — Some of thise should be part of the state change instead.
+            // TODO: Change to behEnemy asset and use behEnemySheet variable.
+            batEnemySheet = Content.Load<Texture2D>("batEnemy");
+            owlEnemySheet = Content.Load<Texture2D>("owlEnemy");
+            bossEnemySheet = Content.Load<Texture2D>("bossEnemy");
+            // TODO: Change to wizardSheet asset and use playerSheet variable.
+            fireSheet = Content.Load<Texture2D>("Fireball_Sprite_Sheet");
+            enemyBolt = Content.Load<Texture2D>("enemyBolt");
+        }
+
+        private void ChangeState(GameState newState)
+        {
+            state = newState;
+            switch (state)
+            {
+                case GameState.Start:
+                    break;
+                case GameState.Playing:
+                    StartNewGame();
+                    break;
+                case GameState.GameOver:
+                    break;
+            }
+        }
+
+        private void StartNewGame()
+        {
+            // Reset the game state.
+            enemies.Clear();
+            fireBolts.Clear();
+
+            // Create the enemies... this should mostly hand over to a controller class.
+            Texture2D enemySheet = Content.Load<Texture2D>("beh_64_idle");
+            Texture2D playerTexture = Content.Load<Texture2D>("mageAnim"); 
             const int enemyFrameCount = 14;
             const int enemyFramesPerSec = 12;
-            Texture2D enemySheet = Content.Load<Texture2D>("beh_64_idle");
-            int enemyFrameWidth = enemySheet.Width / enemyFrameCount;
-            int enemyFrameHeight = enemySheet.Height;
-            // Then make the enemies in a grid based on space.
-            // Easy to set up, stupid design.
-            for (int i = 0; (i * (enemyFrameHeight + 10)) < windowSizeY / 2; i++)
+            for (int i = 0; i < 4; i++)
             {
-                for (int j = 0; (j * (enemyFrameWidth + 10)) < (windowSizeX - enemyFrameWidth); j++)
+                for (int j = 0; j < 6; j++)
                 {
-                    // Animation state is per-enemy, so each one gets its own AnimatedTexture.
                     AnimatedTexture enemyTexture = new AnimatedTexture();
-                    enemyTexture.Load(enemySheet, 
-                     frameCount: enemyFrameCount, 
+                    enemyTexture.Load(enemySheet,
+                     frameCount: enemyFrameCount,
                      framesPerSec: enemyFramesPerSec);
-                    Vector2 pos = new Vector2(j * (enemyFrameWidth + 10) + 10,
-                     i * enemyFrameHeight + 10);
+                    Vector2 pos = new Vector2(j * ((enemySheet.Width / enemyFrameCount) + 10), i * (enemySheet.Height + 10));
                     Enemy enemy = new Enemy(enemyTexture, pos, windowSizeX, windowSizeY);
                     enemy.ReachedBottom += Enemy_ReachedBottom;
                     enemies.Add(enemy);
                 }
             }
-            Texture2D playerTexture = Content.Load<Texture2D>("mageAnim");
+
             AnimatedTexture playerAnimatedTexture = new AnimatedTexture();
             playerAnimatedTexture.Load(playerTexture, frameCount: 12, framesPerSec: 8);
             player = new PlayerChar(playerAnimatedTexture, new Vector2((windowSizeX / 2) - (playerAnimatedTexture.FrameWidth / 2), windowSizeY - playerAnimatedTexture.FrameHeight), windowSizeX);
             player.OutOfLives += Player_OutOfLives;
             player.Fired += Player_Fired;
-
-            fireSheet = Content.Load<Texture2D>("Fireball_Sprite_Sheet");
         }
 
         protected override void Update(GameTime gameTime)
@@ -111,7 +133,12 @@ namespace LinuxInvaders.Core
         }
 
         private void UpdateStart(GameTime gameTime)
-        {}
+        {
+            if (Keyboard.GetState().IsKeyDown(Keys.Enter))
+            {
+                ChangeState(GameState.Playing);
+            }
+        }
 
         private void UpdatePlaying(GameTime gameTime)
         {
@@ -182,7 +209,7 @@ namespace LinuxInvaders.Core
 
         private void Player_OutOfLives(object sender, System.EventArgs e)
         {
-            state = GameState.GameOver;
+            ChangeState(GameState.GameOver);
         }
 
         protected override void Draw(GameTime gameTime)
