@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using LinuxInvaders.Core.Input;
 using System;
 
 namespace LinuxInvaders.Core
@@ -10,21 +11,25 @@ namespace LinuxInvaders.Core
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+        private PlayerInputs input = new PlayerInputs();
         private List<Enemy> enemies = new List<Enemy>();
         private List<FireBolt> fireBolts = new List<FireBolt>();
         private PlayerChar player;
         private GameState state = GameState.Start;
+        private GameState? pendingState = null;
         private int windowSizeX, windowSizeY;
 
         // Textures that need to be kept around
         private Texture2D fireSheet; // Player projectile — 4 frames, 5 rows (orange, purple, green, red, blue)
         private Texture2D enemyBolt; //Enemy projectile — Row 1: creation (6 frames), Row2: travel (3 frames)
         private Texture2D behEnemySheet; //Beholder enemy — Row 1: idle (14 frames), Row 2: attack (6 frames), Row 3: damaged (5 frames), Row 4: dead (10 frames)
+        private Texture2D enemySheet; //Old version of handling the enemy texture, should be removed once the behEnemySheet is used.
         private Texture2D batEnemySheet; //Bat enemy — 4 frames
         private Texture2D owlEnemySheet; //Owl enemy — 5 frames
         private Texture2D bossEnemySheet; //Boss enemy — 15 frames
         private Texture2D barrierSheet; //Barrier
         private Texture2D playerSheet; //Player — Row 1: Right (12 frames), Row 2: Stand (12 frames), Row 3: Left (11 frames), Row 4: Start screen (12 frames)
+        private Texture2D playerTexture; //Old version of handling the player texture, should be removed once the playerSheet is used.
         private Texture2D explosionSheet; //Explosion animation — 13 frames
         private Texture2D hitPointSheet; // Heart — Row 1: full → empty, Row 2: empty → full
         private int attackRow = 0;
@@ -53,19 +58,26 @@ namespace LinuxInvaders.Core
             windowSizeX = Window.ClientBounds.Width;
             windowSizeY = Window.ClientBounds.Height;
 
-            // Load all the textures — Some of thise should be part of the state change instead.
-            // TODO: Change to behEnemy asset and use behEnemySheet variable.
+            enemySheet = Content.Load<Texture2D>("beh_64_idle"); // TODO: Change to behEnemy asset and use behEnemySheet variable.
+            playerTexture = Content.Load<Texture2D>("mageAnim"); // TODO: Change to wizardSheet asset and use playerSheet variable.
             batEnemySheet = Content.Load<Texture2D>("batEnemy");
             owlEnemySheet = Content.Load<Texture2D>("owlEnemy");
             bossEnemySheet = Content.Load<Texture2D>("bossEnemy");
-            // TODO: Change to wizardSheet asset and use playerSheet variable.
             fireSheet = Content.Load<Texture2D>("Fireball_Sprite_Sheet");
             enemyBolt = Content.Load<Texture2D>("enemyBolt");
+        }
+
+        private void RequestStateChange(GameState newState)
+        {
+            if (pendingState != null)
+                return; // Use the first requested one, don't override.
+            pendingState = newState;
         }
 
         private void ChangeState(GameState newState)
         {
             state = newState;
+            pendingState = null;
             switch (state)
             {
                 case GameState.Start:
@@ -85,8 +97,6 @@ namespace LinuxInvaders.Core
             fireBolts.Clear();
 
             // Create the enemies... this should mostly hand over to a controller class.
-            Texture2D enemySheet = Content.Load<Texture2D>("beh_64_idle");
-            Texture2D playerTexture = Content.Load<Texture2D>("mageAnim"); 
             const int enemyFrameCount = 14;
             const int enemyFramesPerSec = 12;
             for (int i = 0; i < 4; i++)
@@ -113,8 +123,11 @@ namespace LinuxInvaders.Core
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            input.UpdateState(IsActive);
+            if (input.IsActionPressed(InputAction.Quit))
                 Exit();
+            if (pendingState != null)
+                ChangeState(pendingState.Value);
             
             switch (state)
             {
@@ -134,9 +147,9 @@ namespace LinuxInvaders.Core
 
         private void UpdateStart(GameTime gameTime)
         {
-            if (Keyboard.GetState().IsKeyDown(Keys.Enter))
+            if (input.IsActionPressed(InputAction.Confirm))
             {
-                ChangeState(GameState.Playing);
+                RequestStateChange(GameState.Playing);
             }
         }
 
@@ -147,7 +160,7 @@ namespace LinuxInvaders.Core
                 enemy.Update(gameTime);
             }
 
-            player.Update(gameTime);
+            player.Update(gameTime, input);
 
             foreach (var bolt in fireBolts)
             {
@@ -209,7 +222,7 @@ namespace LinuxInvaders.Core
 
         private void Player_OutOfLives(object sender, System.EventArgs e)
         {
-            ChangeState(GameState.GameOver);
+            RequestStateChange(GameState.GameOver);
         }
 
         protected override void Draw(GameTime gameTime)

@@ -1,7 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System.Collections.Generic;
+using LinuxInvaders.Core.Input;
 using System;
 
 namespace LinuxInvaders.Core
@@ -15,9 +14,6 @@ namespace LinuxInvaders.Core
 		public event EventHandler OutOfLives;
 		public event EventHandler Fired;
 
-		// Last frame's keyboard
-		private KeyboardState previousKeyboard;
-
 		// Where a shot leaves the player: top edge, horizontally centred.
 		public Vector2 MuzzlePosition => new Vector2(pos.X + texture.FrameWidth / 2f, pos.Y);
 
@@ -28,27 +24,20 @@ namespace LinuxInvaders.Core
 			this.windowSizeX = windowSizeX;
 		}
 
-		public void Update(GameTime gameTime)
+		public void Update(GameTime gameTime, PlayerInputs input)
 		{
 			//Get the animation to move along
 			texture.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
 
-			KeyboardState keyboard = Keyboard.GetState();
-
 			// Update player logic here (e.g., movement, animation)
-			if (keyboard.IsKeyDown(Keys.Left) || keyboard.IsKeyDown(Keys.A))
-				pos.X -= 5;
-			if (keyboard.IsKeyDown(Keys.Right) || keyboard.IsKeyDown(Keys.D))
-				pos.X += 5;
+			pos.X += 5 * input.GetMoveAxis();
 
 			// Keep the player within the window bounds.
 			pos.X = MathHelper.Clamp(pos.X, 0, windowSizeX - texture.FrameWidth);
 
-			// Fire on the frame Space goes down, not every frame it's held.
-			if (keyboard.IsKeyDown(Keys.Space) && !previousKeyboard.IsKeyDown(Keys.Space))
+			// Fire on press, not every frame it's held.
+			if (input.IsActionPressed(InputAction.Fire))
 				Fired?.Invoke(this, EventArgs.Empty);
-
-			previousKeyboard = keyboard;
 		}
 
 		public void Damage(int amount = 1)

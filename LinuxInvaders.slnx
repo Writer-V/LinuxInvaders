@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/LinuxInvaders/">
     <Project Path="LinuxInvaders/LinuxInvaders.Core/LinuxInvaders.Core.csproj" />
+    <Project Path="LinuxInvaders/LinuxInvaders.DesktopGL/LinuxInvaders.DesktopGL.csproj" />
+    <Project Path="LinuxInvaders/LinuxInvaders.WindowsDX/LinuxInvaders.WindowsDX.csproj" />
   </Folder>
 </Solution>
