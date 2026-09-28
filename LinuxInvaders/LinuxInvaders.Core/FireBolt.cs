@@ -1,6 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
+using LinuxInvaders.Core.Graphics;
 
 namespace LinuxInvaders.Core
 {
@@ -12,7 +12,7 @@ namespace LinuxInvaders.Core
 
 		private const float Speed = 2f;
 
-		private AnimatedTexture texture;
+		private SpriteAnimator animationPlayer;
 		private Vector2 pos;
 
 		// False once the bolt has left play; the game sweeps these out of its list.
@@ -21,13 +21,13 @@ namespace LinuxInvaders.Core
 		// The bolt's texture is loaded with a centred origin, so pos is the middle
 		// of the sprite - unlike Enemy, where pos is the top-left corner.
 		public Rectangle Bounds => new Rectangle(
-			(int)(pos.X - texture.FrameWidth / 2f),
-			(int)(pos.Y - texture.FrameHeight / 2f),
-			texture.FrameWidth, texture.FrameHeight);
+			(int)(pos.X - animationPlayer.FrameWidth / 2f),
+			(int)(pos.Y - animationPlayer.FrameHeight / 2f),
+			animationPlayer.FrameWidth, animationPlayer.FrameHeight);
 
-		public FireBolt(AnimatedTexture texture, Vector2 pos)
+		public FireBolt(SpriteAnimator texture, Vector2 pos)
 		{
-			this.texture = texture;
+			animationPlayer = texture;
 			this.pos = pos;
 		}
 
@@ -36,11 +36,11 @@ namespace LinuxInvaders.Core
 			if (!IsActive)
 				return;
 
-			texture.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+			animationPlayer.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
 			pos.Y -= Speed;
 
 			// Gone once the whole sprite has cleared the top edge.
-			if (pos.Y + texture.FrameHeight / 2f < 0)
+			if (pos.Y + animationPlayer.FrameHeight / 2f < 0)
 				IsActive = false;
 		}
 
@@ -52,7 +52,7 @@ namespace LinuxInvaders.Core
 
 		public void Draw(SpriteBatch spriteBatch)
 		{
-			texture.Draw(spriteBatch, pos);
+			animationPlayer.Draw(spriteBatch, pos);
 		}
 	}
 }

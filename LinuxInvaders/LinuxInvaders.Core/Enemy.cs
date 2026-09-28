@@ -1,14 +1,13 @@
+using LinuxInvaders.Core.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System.Collections.Generic;
 using System;
 
 namespace LinuxInvaders.Core
 {
 	public class Enemy
 	{
-		private AnimatedTexture enemyTexture;
+		private SpriteAnimator animationPlayer;
 		private Vector2 pos;
 		int windowSizeX;
 		int windowSizeY;
@@ -19,11 +18,11 @@ namespace LinuxInvaders.Core
 
 		// Collision box TODO: Make into something more accurate.
 		public Rectangle Bounds => new Rectangle((int)pos.X, (int)pos.Y,
-			enemyTexture.FrameWidth, enemyTexture.FrameHeight);
+			animationPlayer.FrameWidth, animationPlayer.FrameHeight);
 
-		public Enemy(AnimatedTexture enemyTexture, Vector2 pos, int windowSizeX, int windowSizeY)
+		public Enemy(SpriteAnimator enemyTexture, Vector2 pos, int windowSizeX, int windowSizeY)
 		{
-			this.enemyTexture = enemyTexture;
+			this.animationPlayer = enemyTexture;
 			this.pos = pos;
 			this.windowSizeX = windowSizeX;
 			this.windowSizeY = windowSizeY;
@@ -35,7 +34,7 @@ namespace LinuxInvaders.Core
 				return;
 
 			//Get the animation to move along
-			enemyTexture.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+			animationPlayer.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
 			// Update enemy logic here (e.g., movement, animation)
 			pos.Y += 1;
 			if (pos.Y > windowSizeY)
@@ -54,7 +53,7 @@ namespace LinuxInvaders.Core
 
 		public void Draw(SpriteBatch spriteBatch)
 		{
-			enemyTexture.Draw(spriteBatch, pos);
+			animationPlayer.Draw(spriteBatch, pos);
 		}
 	}
 }

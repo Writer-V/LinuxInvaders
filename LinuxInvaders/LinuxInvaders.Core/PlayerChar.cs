@@ -1,13 +1,14 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using LinuxInvaders.Core.Input;
+using LinuxInvaders.Core.Graphics;
 using System;
 
 namespace LinuxInvaders.Core
 {
 	public class PlayerChar
 	{
-		private AnimatedTexture texture;
+		private SpriteAnimator animationPlayer;
 		private Vector2 pos;
 		private int windowSizeX;
 		public int RemainingLives { get; private set; } = 3;
@@ -15,11 +16,11 @@ namespace LinuxInvaders.Core
 		public event EventHandler Fired;
 
 		// Where a shot leaves the player: top edge, horizontally centred.
-		public Vector2 MuzzlePosition => new Vector2(pos.X + texture.FrameWidth / 2f, pos.Y);
+		public Vector2 MuzzlePosition => new(pos.X + animationPlayer.FrameWidth / 2f, pos.Y);
 
-		public PlayerChar(AnimatedTexture texture, Vector2 pos, int windowSizeX)
+		public PlayerChar(SpriteAnimator texture, Vector2 pos, int windowSizeX)
 		{
-			this.texture = texture;
+			this.animationPlayer = texture;
 			this.pos = pos;
 			this.windowSizeX = windowSizeX;
 		}
@@ -27,13 +28,13 @@ namespace LinuxInvaders.Core
 		public void Update(GameTime gameTime, PlayerInputs input)
 		{
 			//Get the animation to move along
-			texture.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+			animationPlayer.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
 
 			// Update player logic here (e.g., movement, animation)
 			pos.X += 5 * input.GetMoveAxis();
 
 			// Keep the player within the window bounds.
-			pos.X = MathHelper.Clamp(pos.X, 0, windowSizeX - texture.FrameWidth);
+			pos.X = MathHelper.Clamp(pos.X, 0, windowSizeX - animationPlayer.FrameWidth);
 
 			// Fire on press, not every frame it's held.
 			if (input.IsActionPressed(InputAction.Fire))
@@ -56,7 +57,7 @@ namespace LinuxInvaders.Core
 
 		public void Draw(SpriteBatch spriteBatch)
 		{
-			texture.Draw(spriteBatch, pos);
+			animationPlayer.Draw(spriteBatch, pos);
 		}
 	}
 }
