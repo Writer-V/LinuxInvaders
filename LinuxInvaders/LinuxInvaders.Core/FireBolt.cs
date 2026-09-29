@@ -50,9 +50,12 @@ namespace LinuxInvaders.Core
 			Exists = false;
 		}
 
-		public void Draw(SpriteBatch spriteBatch)
+		public void Draw(SpriteBatch spriteBatch, bool debugView, Texture2D whitePixel)
 		{
 			animationPlayer.Draw(spriteBatch, pos);
+			#if DEBUG
+				if(debugView) spriteBatch.Draw(whitePixel, Bounds, Color.Blue * 0.3f);
+			#endif
 		}
 	}
 }

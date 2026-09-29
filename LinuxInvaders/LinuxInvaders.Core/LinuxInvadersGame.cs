@@ -88,7 +88,7 @@ namespace LinuxInvaders.Core
             );
             playerAnimations = new(
                 Content.Load<Texture2D>("wizardSheet"),
-                168, AnimSequenceType.Idle,
+                169, AnimSequenceType.Idle,
                 (AnimSequenceType.MoveRight, 12, 12, true),
                 (AnimSequenceType.Idle, 12, 12, true),
                 (AnimSequenceType.MoveLeft, 11, 12, true),
@@ -131,9 +131,9 @@ namespace LinuxInvaders.Core
             // Enemy details would also be from an external file
             // Defining enemies Default size for now: 60 width. Scaling accordingly.
             EnemyDefined = new() {
-                [EnemyType.Beholder]    = new(behEnemyAnimations, 20, 1, 60f / behEnemyAnimations.FrameWidth, new(17, 12, 31, 44)),
-                [EnemyType.Bat]         = new(batEnemyAnimations, 10, 1, 60f / batEnemyAnimations.FrameWidth, new(12, 19, 42, 28)),
-                [EnemyType.Owl]         = new(owlEnemyAnimations, 30, 3, 60f / owlEnemyAnimations.FrameWidth, new(11, 6, 90, 83))
+                [EnemyType.Beholder]    = new(EnemyType.Beholder, behEnemyAnimations, 20, 1, 60f / behEnemyAnimations.FrameWidth, new(17, 12, 31, 44)),
+                [EnemyType.Bat]         = new(EnemyType.Bat, batEnemyAnimations, 10, 1, 60f / batEnemyAnimations.FrameWidth, new(12, 19, 42, 28)),
+                [EnemyType.Owl]         = new(EnemyType.Owl, owlEnemyAnimations, 30, 2, 60f / owlEnemyAnimations.FrameWidth, new(11, 6, 90, 83))
             };
         }
 
@@ -163,18 +163,32 @@ namespace LinuxInvaders.Core
         private void StartNewGame()
         {
             // Reset the game state.
-            enemies = null;
             fireBolts.Clear();
 
-            EnemyDefinition[] lvl1Enemies = {EnemyDefined[EnemyType.Owl], EnemyDefined[EnemyType.Beholder], EnemyDefined[EnemyType.Bat]};
-            enemies = new(lvl1Enemies, Vector2.Zero, new Vector2(windowSizeX,windowSizeY));
-
-            // Only 1 player — no need to separate definitions
+            // Only 1 player — no need to separate definitions.
             player = new PlayerChar(playerAnimations, 
                 new Vector2((windowSizeX / 2) - (playerAnimations.FrameWidth / 2), 
                 windowSizeY - playerAnimations.FrameHeight), windowSizeX);
             player.OutOfLives += Player_OutOfLives;
             player.Fired += Player_Fired;
+
+            //In a theoretical full version, a Level struct/class would be appropriate for all of this.
+            EnemyDefinition[] lvl1Enemies = {
+                EnemyDefined[EnemyType.Owl], 
+                EnemyDefined[EnemyType.Beholder], 
+                EnemyDefined[EnemyType.Beholder], 
+                EnemyDefined[EnemyType.Bat],
+                EnemyDefined[EnemyType.Bat]
+            };
+            int columns = 6;
+            float hitBoxScale = 1.3f;
+            Vector2 startSpeed = new(25f, 20f);
+            Vector2 highSpeed = new(100f, 50f);
+
+            enemies = new(lvl1Enemies, columns, Vector2.Zero, hitBoxScale, startSpeed, highSpeed, 
+                new Point(windowSizeX,windowSizeY), player.Bounds.Top);
+
+            enemies.EnemyReachedPlayer += Enemy_ReachedBottom;
         }
 
         protected override void Update(GameTime gameTime)
@@ -212,51 +226,25 @@ namespace LinuxInvaders.Core
 
         private void UpdatePlaying(GameTime gameTime)
         {
-            foreach (var enemy in enemies.enemyGrid)
-            {
-                enemy.Update(gameTime);
-            }
+            enemies.Update(gameTime);
 
             player.Update(gameTime, input);
 
             foreach (var bolt in fireBolts)
             {
                 bolt.Update(gameTime);
+                if(enemies.TryHit(bolt.Bounds))
+                {
+                    bolt.Deactivate();
+                    continue;
+                }
             }
-
-            ResolveBoltHits();
-
-            // Removals after the loop.
-            //enemies.RemoveAll(enemy => !enemy.Exists); TODO: ← Needs new logic
             fireBolts.RemoveAll(bolt => !bolt.Exists);
-            Window.Title = $"Invaders - Lives: {player.RemainingLives} - Enemies: {enemies.EnemiesAlive}";
+            Window.Title = $"Invaders - Lives: {player.RemainingLives} - Enemies: {enemies.EnemiesAlive()}"; //Remove when there's in-window UI
         }
 
         private void UpdateGameOver(GameTime gameTime)
         {}
-
-        private void ResolveBoltHits() // Pulled out of Update
-        {
-            foreach (var bolt in fireBolts)
-            {
-                if (!bolt.Exists)
-                    continue;
-
-                foreach (var enemy in enemies.enemyGrid)
-                {
-                    if (!enemy.Exists)
-                        continue;
-
-                    if (bolt.Bounds.Intersects(enemy.Bounds))
-                    {
-                        bolt.Deactivate();
-                        enemy.Deactivate();
-                        // One bolt, one enemy: stop looking once it has hit.
-                        break;
-                    }
-                }
-            }
-        }
 
         private void Player_Fired(object sender, EventArgs e)
         {
@@ -301,29 +289,14 @@ namespace LinuxInvaders.Core
         private void DrawPlaying(GameTime gameTime)
         {
             _spriteBatch.Begin();
-            foreach (var enemy in enemies.enemyGrid)
-            {
-                enemy.Draw(_spriteBatch);
-                if(debugView) _spriteBatch.Draw(WhitePixel, enemy.Bounds, Color.Violet * 0.3f);
-            }
+            enemies.Draw(_spriteBatch, debugView, WhitePixel);
+
             foreach (var bolt in fireBolts)
             {
-                bolt.Draw(_spriteBatch);
+                bolt.Draw(_spriteBatch, debugView, WhitePixel);
             }
 
             player.Draw(_spriteBatch);
-
-            #if DEBUG
-            foreach (var enemy in enemies.enemyGrid)
-            {
-                if(debugView) _spriteBatch.Draw(WhitePixel, enemy.Bounds, Color.Violet * 0.3f);
-            }
-            foreach (var bolt in fireBolts)
-            {
-                bolt.Draw(_spriteBatch);
-            }
-            if(debugView) _spriteBatch.Draw(WhitePixel, player.Bounds, Color.Green * 0.3f);
-            #endif
 
             _spriteBatch.End();
         }

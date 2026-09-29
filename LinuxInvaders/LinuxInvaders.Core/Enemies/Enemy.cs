@@ -2,6 +2,7 @@ using LinuxInvaders.Core.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Runtime.InteropServices;
 
 namespace LinuxInvaders.Core.Enemies
 {
@@ -9,29 +10,39 @@ namespace LinuxInvaders.Core.Enemies
 	{
 		private SpriteAnimator animationPlayer;
 		private EnemyDefinition definition;
+		public EnemyType Type => definition.Type;
+		public int Points => definition.PointValue;
 		private Vector2 pos;
 		private Rectangle boundingBox;
+		private float hitBoxScale; //Make Bounds bigger/smaller for game balance
 		public Rectangle Bounds => new(
-			boundingBox.Location + pos.ToPoint(),
-			boundingBox.Size
-		);
-		int windowSizeX;
-		int windowSizeY;
-		public event EventHandler ReachedBottom;
+			new Point((int)(boundingBox.X * (hitBoxScale/2)), (int)(boundingBox.Y * (hitBoxScale/2))) + pos.ToPoint(),
+			new Point((int)(boundingBox.Width * hitBoxScale), (int)(boundingBox.Height * hitBoxScale)));
+
+		//Testing the padding needed for it to make sense for movement.
+		private Point movementPadding = new(10,10);
+		public Point TopLeft => boundingBox.Location - movementPadding + pos.ToPoint();
+		public Point BottomRight => boundingBox.Location + boundingBox.Size + movementPadding + pos.ToPoint();
+
+		int health;
 
 		// Should it exist? If false: don't update; don't draw; don't anything
 		public bool Exists { get; private set; } = true;
+
 		// Display as it dies, but no longer treat as present for the game
 		public bool TakenOut { get; private set; } = false;
+		public void IgnoreFromNow() => TakenOut = true; // No longer used, but still displayed
+		public void Remove() => Exists = false; // Off screen or otherwise removed
 
-		public Enemy(EnemyDefinition definition, Vector2 pos, int windowSizeX, int windowSizeY)
+
+		public Enemy(EnemyDefinition definition, Vector2 pos, float hitBoxScale)
 		{
 			this.definition = definition;
 			animationPlayer = new(definition.Animations, scale: definition.Scale);
 			this.pos = pos;
 			boundingBox = definition.ScaledBounds();
-			this.windowSizeX = windowSizeX;
-			this.windowSizeY = windowSizeY;
+			this.hitBoxScale = hitBoxScale;
+			health = definition.InitialHealth;
 		}
 		
 		public void Update(GameTime gameTime)
@@ -41,24 +52,36 @@ namespace LinuxInvaders.Core.Enemies
 
 			//Get the animation to move along
 			animationPlayer.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-			// Update enemy logic here (e.g., movement, animation)
-			pos.Y += 1;
-			if (pos.Y > windowSizeY)
+		}
+		public void MoveBy(Vector2 delta)
+		{
+			pos += delta;
+		}
+		public int TakeHit(int damage = 1)
+		{
+			if(TakenOut) return -1; //
+			health--;
+			if(health < 1)
 			{
-				// Mark for removal and throw an event, just in case.
-				Exists = false;
-				ReachedBottom?.Invoke(this, EventArgs.Empty);
+				TakenOut = true;
+				animationPlayer.PlayOnce(AnimSequenceType.Death);
+				animationPlayer.FinishedAnim += DeathAnimationFinished;
+				return 0; //It got killed
 			}
+			else animationPlayer.PlayOnce(AnimSequenceType.Hit, true);
+			return health; // Still alive
 		}
 
-		// Mark for removal.
-		public void Deactivate()
+		// No need to keep track of this enemy anymore.
+		private void DeathAnimationFinished(object sender, EventArgs e)
 		{
 			Exists = false;
 		}
 
 		public void Draw(SpriteBatch spriteBatch)
 		{
+			if(!Exists)
+				return;
 			animationPlayer.Draw(spriteBatch, pos);
 		}
 	}

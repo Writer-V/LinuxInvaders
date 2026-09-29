@@ -5,15 +5,17 @@ namespace LinuxInvaders.Core.Enemies
 {
     public record EnemyDefinition
     {
+        public EnemyType Type {get; init;}
         public AnimationSet Animations { get; init; }
         public int PointValue { get; init; }
         public int InitialHealth { get; init; } //Hits to kill
         public float Scale {get; init; }
         public Rectangle Bounds {get; init;}
         // When there's a projectile class add here, including the possibility to not have one (null? bool?)
-        public EnemyDefinition(AnimationSet animationSet, int points, int initialHealth, 
+        public EnemyDefinition(EnemyType enemyType, AnimationSet animationSet, int points, int initialHealth, 
             float scale = 1, Rectangle? bounds = null)
         {
+            Type = enemyType;
             Animations = animationSet;
             PointValue = points;
             InitialHealth = initialHealth;
