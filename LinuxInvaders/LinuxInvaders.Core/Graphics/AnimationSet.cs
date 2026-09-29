@@ -27,13 +27,17 @@ namespace LinuxInvaders.Core.Graphics
             }
             //Using with to reflect existing ones to create bonus sequences.
             if (clips.ContainsKey(AnimSequenceType.MoveLeft) && !clips.ContainsKey(AnimSequenceType.MoveRight))
-                clips.Add(AnimSequenceType.MoveRight, clips[AnimSequenceType.MoveLeft] with {ApplyEffect = SpriteEffects.FlipHorizontally});
+                clips.Add(AnimSequenceType.MoveRight, clips[AnimSequenceType.MoveLeft] with
+                    {ApplyEffect = clips[AnimSequenceType.MoveLeft].ApplyEffect ^ SpriteEffects.FlipHorizontally});
             else if (!clips.ContainsKey(AnimSequenceType.MoveLeft) && clips.ContainsKey(AnimSequenceType.MoveRight))
-                clips.Add(AnimSequenceType.MoveLeft, clips[AnimSequenceType.MoveRight] with {ApplyEffect = SpriteEffects.FlipHorizontally});
+                clips.Add(AnimSequenceType.MoveLeft, clips[AnimSequenceType.MoveRight] with 
+                    {ApplyEffect = clips[AnimSequenceType.MoveRight].ApplyEffect ^ SpriteEffects.FlipHorizontally});
             if (clips.ContainsKey(AnimSequenceType.FlyingUp) && !clips.ContainsKey(AnimSequenceType.FlyingDown))
-                clips.Add(AnimSequenceType.FlyingDown, clips[AnimSequenceType.FlyingUp] with { ApplyEffect = SpriteEffects.FlipVertically});
+                clips.Add(AnimSequenceType.FlyingDown, clips[AnimSequenceType.FlyingUp] with 
+                    { ApplyEffect = clips[AnimSequenceType.FlyingUp].ApplyEffect ^ SpriteEffects.FlipVertically});
             else if (!clips.ContainsKey(AnimSequenceType.FlyingUp) && clips.ContainsKey(AnimSequenceType.FlyingDown))
-                clips.Add(AnimSequenceType.FlyingUp, clips[AnimSequenceType.FlyingDown] with { ApplyEffect = SpriteEffects.FlipVertically});
+                clips.Add(AnimSequenceType.FlyingUp, clips[AnimSequenceType.FlyingDown] with 
+                    { ApplyEffect = clips[AnimSequenceType.FlyingDown].ApplyEffect ^ SpriteEffects.FlipVertically});
             if(!clips.ContainsKey(defaultType)) throw new ArgumentException("AnimationSet doesn't include default sequence");
         }
         public AnimationClip BestClipFor(AnimSequenceType type)

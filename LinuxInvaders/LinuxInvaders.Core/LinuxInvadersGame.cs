@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using LinuxInvaders.Core.Input;
 using LinuxInvaders.Core.Graphics;
 using System;
+using LinuxInvaders.Core.Enemies;
 
 namespace LinuxInvaders.Core
 {
@@ -12,11 +13,12 @@ namespace LinuxInvaders.Core
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private PlayerInputs input = new PlayerInputs();
-        private List<Enemy> enemies = new List<Enemy>();
+        private EnemyFormation enemies;
         private List<FireBolt> fireBolts = new List<FireBolt>();
         private PlayerChar player;
         private GameState state = GameState.Start;
         private GameState? pendingState = null;
+        private bool debugView = false;
         private int windowSizeX, windowSizeY;
 
         // Textures that need to be kept around
@@ -29,10 +31,10 @@ namespace LinuxInvaders.Core
         private AnimationSet barrierAnimations; //Barrier — Row 1: Idle (24 frames), Row 2: Creation (8 frames), Row 3: Death (6 frames)
         private AnimationSet fireBoltAnimations; // Player projectile — 4 frames, 5 rows (orange, purple, green, red, blue)
         private AnimationSet enemyBoltAnimations; //Enemy projectile — Row 1: creation (6 frames), Row2: travel (3 frames)
-        private AnimationSet explosionAnimation; //Explosion animation — 13 frames
+        private AnimationSet explosionAnimations; //Explosion animation — 13 frames
+        private Texture2D WhitePixel; //Just used for debugging
 
-        private const int FireBoltFrameCount = 4;
-        private const int FireBoltFrameSize = 32;
+        private Dictionary<EnemyType, EnemyDefinition> EnemyDefined;
 
         public LinuxInvadersGame()
         {
@@ -55,7 +57,12 @@ namespace LinuxInvaders.Core
             windowSizeX = Window.ClientBounds.Width;
             windowSizeY = Window.ClientBounds.Height;
 
-            //Animation sets
+            //Single white pixel for highlighting while debugging
+            WhitePixel = new(GraphicsDevice, 1, 1);
+            WhitePixel.SetData(new Color[1] { Color.White});
+
+
+            //Animation sets — Details would in theory come from JSON or similar
             behEnemyAnimations = new(
                 Content.Load<Texture2D>("behEnemy"), 
                 64, AnimSequenceType.Idle,
@@ -67,16 +74,16 @@ namespace LinuxInvaders.Core
             batEnemyAnimations = new(
                 Content.Load<Texture2D>("batEnemy"),
                 64, AnimSequenceType.Idle,
-                (AnimSequenceType.Idle, 4, 6, true)
+                (AnimSequenceType.Idle, 4, 4, true)
             );
             owlEnemyAnimations = new(
                 Content.Load<Texture2D>("owlEnemy"),
                 112, AnimSequenceType.Idle,
-                (AnimSequenceType.Idle, 5, 6, true)
+                (AnimSequenceType.Idle, 5, 4, true)
             );
             bossEnemyAnimations = new(
                 Content.Load<Texture2D>("bossEnemy"),
-                240, AnimSequenceType.Idle,
+                136, AnimSequenceType.Idle,
                 (AnimSequenceType.Idle, 15, 12, true)
             );
             playerAnimations = new(
@@ -113,13 +120,21 @@ namespace LinuxInvaders.Core
                 Content.Load<Texture2D>("enemyBolt"),
                 32, AnimSequenceType.RegularAttack,
                 (AnimSequenceType.Creation, 6, 12, false),
-                (AnimSequenceType.RegularAttack, 3, 12, true);
+                (AnimSequenceType.RegularAttack, 3, 12, true)
             );
-            explosionAnimation = new(
+            explosionAnimations = new(
                 Content.Load<Texture2D>("explosionSheet"),
-                422, AnimSequenceType.Explosion,
+                100, AnimSequenceType.Explosion,
                 (AnimSequenceType.Explosion, 13, 12, false)
             );
+
+            // Enemy details would also be from an external file
+            // Defining enemies Default size for now: 60 width. Scaling accordingly.
+            EnemyDefined = new() {
+                [EnemyType.Beholder]    = new(behEnemyAnimations, 20, 1, 60f / behEnemyAnimations.FrameWidth, new(17, 12, 31, 44)),
+                [EnemyType.Bat]         = new(batEnemyAnimations, 10, 1, 60f / batEnemyAnimations.FrameWidth, new(12, 19, 42, 28)),
+                [EnemyType.Owl]         = new(owlEnemyAnimations, 30, 3, 60f / owlEnemyAnimations.FrameWidth, new(11, 6, 90, 83))
+            };
         }
 
         private void RequestStateChange(GameState newState)
@@ -148,24 +163,14 @@ namespace LinuxInvaders.Core
         private void StartNewGame()
         {
             // Reset the game state.
-            enemies.Clear();
+            enemies = null;
             fireBolts.Clear();
 
-            // Create the enemies... this should mostly hand over to a controller class.
-            for (int i = 0; i < 4; i++)
-            {
-                for (int j = 0; j < 6; j++)
-                {
-                    SpriteAnimator enemyTexture = new SpriteAnimator(behEnemyAnimations);
-                    Vector2 pos = new Vector2(j * (behEnemyAnimations.FrameWidth + 10), i * (behEnemyAnimations.FrameHeight + 10));
-                    Enemy enemy = new Enemy(enemyTexture, pos, windowSizeX, windowSizeY);
-                    enemy.ReachedBottom += Enemy_ReachedBottom;
-                    enemies.Add(enemy);
-                }
-            }
+            EnemyDefinition[] lvl1Enemies = {EnemyDefined[EnemyType.Owl], EnemyDefined[EnemyType.Beholder], EnemyDefined[EnemyType.Bat]};
+            enemies = new(lvl1Enemies, Vector2.Zero, new Vector2(windowSizeX,windowSizeY));
 
-            SpriteAnimator playerAnimationsTexture = new SpriteAnimator(playerAnimations);
-            player = new PlayerChar(playerAnimationsTexture, 
+            // Only 1 player — no need to separate definitions
+            player = new PlayerChar(playerAnimations, 
                 new Vector2((windowSizeX / 2) - (playerAnimations.FrameWidth / 2), 
                 windowSizeY - playerAnimations.FrameHeight), windowSizeX);
             player.OutOfLives += Player_OutOfLives;
@@ -175,6 +180,7 @@ namespace LinuxInvaders.Core
         protected override void Update(GameTime gameTime)
         {
             input.UpdateState(IsActive);
+            if(input.IsActionPressed(InputAction.Debug)) debugView = !debugView;
             if (input.IsActionPressed(InputAction.Quit))
                 Exit();
             if (pendingState != null)
@@ -206,7 +212,7 @@ namespace LinuxInvaders.Core
 
         private void UpdatePlaying(GameTime gameTime)
         {
-            foreach (var enemy in enemies)
+            foreach (var enemy in enemies.enemyGrid)
             {
                 enemy.Update(gameTime);
             }
@@ -221,9 +227,9 @@ namespace LinuxInvaders.Core
             ResolveBoltHits();
 
             // Removals after the loop.
-            enemies.RemoveAll(enemy => !enemy.IsActive);
-            fireBolts.RemoveAll(bolt => !bolt.IsActive);
-            Window.Title = $"Invaders - Lives: {player.RemainingLives} - Enemies: {enemies.Count}";
+            //enemies.RemoveAll(enemy => !enemy.Exists); TODO: ← Needs new logic
+            fireBolts.RemoveAll(bolt => !bolt.Exists);
+            Window.Title = $"Invaders - Lives: {player.RemainingLives} - Enemies: {enemies.EnemiesAlive}";
         }
 
         private void UpdateGameOver(GameTime gameTime)
@@ -233,12 +239,12 @@ namespace LinuxInvaders.Core
         {
             foreach (var bolt in fireBolts)
             {
-                if (!bolt.IsActive)
+                if (!bolt.Exists)
                     continue;
 
-                foreach (var enemy in enemies)
+                foreach (var enemy in enemies.enemyGrid)
                 {
-                    if (!enemy.IsActive)
+                    if (!enemy.Exists)
                         continue;
 
                     if (bolt.Bounds.Intersects(enemy.Bounds))
@@ -295,19 +301,40 @@ namespace LinuxInvaders.Core
         private void DrawPlaying(GameTime gameTime)
         {
             _spriteBatch.Begin();
-            foreach (var enemy in enemies)
+            foreach (var enemy in enemies.enemyGrid)
             {
                 enemy.Draw(_spriteBatch);
+                if(debugView) _spriteBatch.Draw(WhitePixel, enemy.Bounds, Color.Violet * 0.3f);
             }
             foreach (var bolt in fireBolts)
             {
                 bolt.Draw(_spriteBatch);
             }
+
             player.Draw(_spriteBatch);
+
+            #if DEBUG
+            foreach (var enemy in enemies.enemyGrid)
+            {
+                if(debugView) _spriteBatch.Draw(WhitePixel, enemy.Bounds, Color.Violet * 0.3f);
+            }
+            foreach (var bolt in fireBolts)
+            {
+                bolt.Draw(_spriteBatch);
+            }
+            if(debugView) _spriteBatch.Draw(WhitePixel, player.Bounds, Color.Green * 0.3f);
+            #endif
+
             _spriteBatch.End();
         }
 
         private void DrawGameOver(GameTime gameTime)
         {}
+
+        protected override void UnloadContent()
+        {
+            WhitePixel.Dispose();
+            base.UnloadContent();
+        }
     }
 }

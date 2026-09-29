@@ -17,7 +17,8 @@ namespace LinuxInvaders.Core.Input
             [InputAction.MoveRight] = new[] {new InputBinding(Keys.Right), new InputBinding(Keys.D)},
             [InputAction.Fire]      = new[] {new InputBinding(Keys.Space)},
             [InputAction.Confirm]   = new[] {new InputBinding(Keys.Enter)},
-            [InputAction.Quit]      = new[] {new InputBinding(Keys.Escape)}
+            [InputAction.Quit]      = new[] {new InputBinding(Keys.Escape)},
+            [InputAction.Debug]     = new[] {new InputBinding(Keys.F9)}
         };
         public IReadOnlyList<InputBinding> GetBindings(InputAction action) => bindings[action];
         private bool IsKeyPressed(InputBinding input)

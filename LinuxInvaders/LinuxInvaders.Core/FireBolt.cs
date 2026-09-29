@@ -16,7 +16,7 @@ namespace LinuxInvaders.Core
 		private Vector2 pos;
 
 		// False once the bolt has left play; the game sweeps these out of its list.
-		public bool IsActive { get; private set; } = true;
+		public bool Exists { get; private set; } = true;
 
 		// The bolt's texture is loaded with a centred origin, so pos is the middle
 		// of the sprite - unlike Enemy, where pos is the top-left corner.
@@ -33,7 +33,7 @@ namespace LinuxInvaders.Core
 
 		public void Update(GameTime gameTime)
 		{
-			if (!IsActive)
+			if (!Exists)
 				return;
 
 			animationPlayer.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
@@ -41,13 +41,13 @@ namespace LinuxInvaders.Core
 
 			// Gone once the whole sprite has cleared the top edge.
 			if (pos.Y + animationPlayer.FrameHeight / 2f < 0)
-				IsActive = false;
+				Exists = false;
 		}
 
 		// Take this bolt out of play - it hit something.
 		public void Deactivate()
 		{
-			IsActive = false;
+			Exists = false;
 		}
 
 		public void Draw(SpriteBatch spriteBatch)

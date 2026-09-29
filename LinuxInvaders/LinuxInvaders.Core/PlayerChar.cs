@@ -10,6 +10,8 @@ namespace LinuxInvaders.Core
 	{
 		private SpriteAnimator animationPlayer;
 		private Vector2 pos;
+		private Rectangle boundingBox;
+		public Rectangle Bounds => new(boundingBox.Location + pos.ToPoint(), boundingBox.Size);
 		private int windowSizeX;
 		public int RemainingLives { get; private set; } = 3;
 		public event EventHandler OutOfLives;
@@ -18,11 +20,12 @@ namespace LinuxInvaders.Core
 		// Where a shot leaves the player: top edge, horizontally centred.
 		public Vector2 MuzzlePosition => new(pos.X + animationPlayer.FrameWidth / 2f, pos.Y);
 
-		public PlayerChar(SpriteAnimator texture, Vector2 pos, int windowSizeX)
+		public PlayerChar(AnimationSet animations, Vector2 pos, int windowSizeX)
 		{
-			this.animationPlayer = texture;
+			animationPlayer = new(animations, initialAnimType: AnimSequenceType.Idle);
 			this.pos = pos;
 			this.windowSizeX = windowSizeX;
+			boundingBox = new(49,22,69,125); //Should obviously be set outside in a real project
 		}
 
 		public void Update(GameTime gameTime, PlayerInputs input)
@@ -31,10 +34,14 @@ namespace LinuxInvaders.Core
 			animationPlayer.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
 
 			// Update player logic here (e.g., movement, animation)
-			pos.X += 5 * input.GetMoveAxis();
+			float moveDelta = input.GetMoveAxis();
+			pos.X += 5 * moveDelta;
+			if (moveDelta > 0) animationPlayer.Play(AnimSequenceType.MoveRight);
+			else if (moveDelta < 0) animationPlayer.Play(AnimSequenceType.MoveLeft);
+			else animationPlayer.Play(AnimSequenceType.Idle);
 
 			// Keep the player within the window bounds.
-			pos.X = MathHelper.Clamp(pos.X, 0, windowSizeX - animationPlayer.FrameWidth);
+			pos.X = MathHelper.Clamp(pos.X, 0 - boundingBox.X, windowSizeX - boundingBox.Width);
 
 			// Fire on press, not every frame it's held.
 			if (input.IsActionPressed(InputAction.Fire))

@@ -20,22 +20,22 @@ namespace LinuxInvaders.Core.Graphics
 		private bool paused = false;
         // For getting the sprite with complicated parameters.
 		public float Rotation { get; set; }
-		public float Scale { get; set; } 
+		public float Scale { get; set; }
 		public float Depth { get; set; }
 		private Vector2 origin; //For rotation
 		public event EventHandler  FinishedAnim;
-		public SpriteAnimator(AnimationSet animationSet, float rotation = 0f, float scale = 1f, float depth = 0f, 
+		public SpriteAnimator(AnimationSet animationSet, float rotation = 0f, float depth = 0f, float scale = 1f,
 			bool centerOrigin = false, AnimSequenceType initialAnimType = AnimSequenceType.Default)
 		{
-			state = PlaybackMode.Play;
 			this.animationSet = animationSet;
-			this.Rotation = rotation;
-            this.Scale = scale;
-            this.Depth = depth;
+			Rotation = rotation;
+            Depth = depth;
+			Scale = scale;
 			baseSequence = initialAnimType;
 			clip = animationSet.BestClipFor(baseSequence);
             if (centerOrigin) //For sprites that need to turn
 				origin = new Vector2(animationSet.FrameWidth / 2f, animationSet.FrameHeight / 2f);
+			state = PlaybackMode.Play;
 		}
 		public void Update(float elapsed)
 		{
@@ -70,12 +70,13 @@ namespace LinuxInvaders.Core.Graphics
 		}
 		public void Draw(SpriteBatch batch, Vector2 pos)
 		{
-			batch.Draw(animationSet.Texture, pos, clip.FrameRectangle(currentFrame), Color.White,
-				Rotation, origin, Scale, clip.ApplyEffect, Depth);
+			batch.Draw(animationSet.Texture, pos, clip.FrameRectangle(currentFrame), Color.White, Rotation, origin, Scale, clip.ApplyEffect, Depth);
 		}
 		public void Play(AnimSequenceType type)
 		{
-			if(type == baseSequence) return;
+			if(type == baseSequence && state == PlaybackMode.Play) return; //Already has the right animation. Otherwise set what to return to when not in PlayOnce.
+			if(state == PlaybackMode.Stopped) state = PlaybackMode.Play;
+			if(state == PlaybackMode.Play || state == PlaybackMode.Stopped) Reset();
 			baseSequence = type;
 			if(state == PlaybackMode.Play) clip = animationSet.BestClipFor(baseSequence);
 		}
@@ -96,12 +97,6 @@ namespace LinuxInvaders.Core.Graphics
 		{
 			Pause();
 			Reset();
-		}
-
-		public void Start()
-		{
-			state = PlaybackMode.Play;
-			if(paused) paused = false;
 		}
 
 		public void Pause()

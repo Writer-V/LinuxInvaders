@@ -2,6 +2,6 @@ namespace LinuxInvaders.Core.Input
 {
     public enum InputAction
     {
-        MoveLeft, MoveRight, Fire, Confirm, Quit
+        MoveLeft, MoveRight, Fire, Confirm, Quit, Debug
     }
 }

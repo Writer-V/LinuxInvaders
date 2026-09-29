@@ -28,9 +28,8 @@ namespace LinuxInvaders.Core.Graphics
             Row = row;
             Loop = loop;
             this.framesPerSec = framesPerSec;
-            if(flipX) ApplyEffect = SpriteEffects.FlipHorizontally;
-            else if(flipY) ApplyEffect = SpriteEffects.FlipVertically;
-            else if (flipX && flipY) ApplyEffect = SpriteEffects.FlipHorizontally | SpriteEffects.FlipVertically; //One of these is enough for now...
+            if(flipX) ApplyEffect |= SpriteEffects.FlipHorizontally;
+            if(flipY) ApplyEffect |= SpriteEffects.FlipVertically;
             FrameWidth = frameWidth;
             FrameHeight = frameHeight;
 

@@ -3,34 +3,40 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
-namespace LinuxInvaders.Core
+namespace LinuxInvaders.Core.Enemies
 {
 	public class Enemy
 	{
 		private SpriteAnimator animationPlayer;
+		private EnemyDefinition definition;
 		private Vector2 pos;
+		private Rectangle boundingBox;
+		public Rectangle Bounds => new(
+			boundingBox.Location + pos.ToPoint(),
+			boundingBox.Size
+		);
 		int windowSizeX;
 		int windowSizeY;
 		public event EventHandler ReachedBottom;
 
-		// Should it exist?
-		public bool IsActive { get; private set; } = true;
+		// Should it exist? If false: don't update; don't draw; don't anything
+		public bool Exists { get; private set; } = true;
+		// Display as it dies, but no longer treat as present for the game
+		public bool TakenOut { get; private set; } = false;
 
-		// Collision box TODO: Make into something more accurate.
-		public Rectangle Bounds => new Rectangle((int)pos.X, (int)pos.Y,
-			animationPlayer.FrameWidth, animationPlayer.FrameHeight);
-
-		public Enemy(SpriteAnimator enemyTexture, Vector2 pos, int windowSizeX, int windowSizeY)
+		public Enemy(EnemyDefinition definition, Vector2 pos, int windowSizeX, int windowSizeY)
 		{
-			this.animationPlayer = enemyTexture;
+			this.definition = definition;
+			animationPlayer = new(definition.Animations, scale: definition.Scale);
 			this.pos = pos;
+			boundingBox = definition.ScaledBounds();
 			this.windowSizeX = windowSizeX;
 			this.windowSizeY = windowSizeY;
 		}
 		
 		public void Update(GameTime gameTime)
 		{
-			if (!IsActive)
+			if (!Exists)
 				return;
 
 			//Get the animation to move along
@@ -40,7 +46,7 @@ namespace LinuxInvaders.Core
 			if (pos.Y > windowSizeY)
 			{
 				// Mark for removal and throw an event, just in case.
-				IsActive = false;
+				Exists = false;
 				ReachedBottom?.Invoke(this, EventArgs.Empty);
 			}
 		}
@@ -48,7 +54,7 @@ namespace LinuxInvaders.Core
 		// Mark for removal.
 		public void Deactivate()
 		{
-			IsActive = false;
+			Exists = false;
 		}
 
 		public void Draw(SpriteBatch spriteBatch)
