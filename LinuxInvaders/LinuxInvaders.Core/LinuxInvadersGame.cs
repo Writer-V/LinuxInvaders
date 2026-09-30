@@ -16,8 +16,14 @@ namespace LinuxInvaders.Core
         private EnemyFormation enemies;
         private List<FireBolt> fireBolts = new List<FireBolt>();
         private PlayerChar player;
+        private HitPointDisplay hitPointDisplay;
+        private int score = 0;
+        private bool win = true; // Simple bool for now
         private GameState state = GameState.Start;
         private GameState? pendingState = null;
+        //Start, game over, and player should really be subclasses to a Screen class
+        private StartScreen startScreen;
+        private GameOverScreen gameOverScreen;
         private bool debugView = false;
         private int windowSizeX, windowSizeY;
 
@@ -32,6 +38,15 @@ namespace LinuxInvaders.Core
         private AnimationSet fireBoltAnimations; // Player projectile — 4 frames, 5 rows (orange, purple, green, red, blue)
         private AnimationSet enemyBoltAnimations; //Enemy projectile — Row 1: creation (6 frames), Row2: travel (3 frames)
         private AnimationSet explosionAnimations; //Explosion animation — 13 frames
+        private SpriteAnimator hitPointAnimator; // For the HUD
+        private SpriteFont font;
+        private Texture2D startButton;
+        private Texture2D restartButton;
+        private BackgroundDraw backgroundDraw;
+        private Texture2D startBackground;
+        private Texture2D playingBackground;
+        private Texture2D winBackground;
+        private Texture2D loseBackground;
         private Texture2D WhitePixel; //Just used for debugging
 
         private Dictionary<EnemyType, EnemyDefinition> EnemyDefined;
@@ -57,10 +72,20 @@ namespace LinuxInvaders.Core
             windowSizeX = Window.ClientBounds.Width;
             windowSizeY = Window.ClientBounds.Height;
 
+            font = Content.Load<SpriteFont>("font");
+            startButton = Content.Load<Texture2D>("Startknapp");
+            restartButton = Content.Load<Texture2D>("restartButton");
+
+            //Background textures. Could be loaded/unloaded instead. Another time, another game.
+            startBackground = Content.Load<Texture2D>("introBackground");
+            playingBackground = Content.Load<Texture2D>("gameBackground");
+            winBackground = Content.Load<Texture2D>("successBackground");
+            loseBackground = Content.Load<Texture2D>("failedBackground");
+            backgroundDraw = new(startBackground, new(windowSizeX,windowSizeY));
+
             //Single white pixel for highlighting while debugging
             WhitePixel = new(GraphicsDevice, 1, 1);
             WhitePixel.SetData(new Color[1] { Color.White});
-
 
             //Animation sets — Details would in theory come from JSON or similar
             behEnemyAnimations = new(
@@ -88,7 +113,7 @@ namespace LinuxInvaders.Core
             );
             playerAnimations = new(
                 Content.Load<Texture2D>("wizardSheet"),
-                169, AnimSequenceType.Idle,
+                168, AnimSequenceType.Idle,
                 (AnimSequenceType.MoveRight, 12, 12, true),
                 (AnimSequenceType.Idle, 12, 12, true),
                 (AnimSequenceType.MoveLeft, 11, 12, true),
@@ -97,8 +122,8 @@ namespace LinuxInvaders.Core
             hitPointAnimations = new(
                 Content.Load<Texture2D>("hitPoint"),
                 23, AnimSequenceType.Creation,
-                (AnimSequenceType.Creation, 8, 12, false),
-                (AnimSequenceType.Death, 8, 12, false)
+                (AnimSequenceType.Death, 8, 12, false),
+                (AnimSequenceType.Creation, 8, 12, false)
             );
             barrierAnimations = new(
                 Content.Load<Texture2D>("barrierSheet"),
@@ -127,6 +152,15 @@ namespace LinuxInvaders.Core
                 100, AnimSequenceType.Explosion,
                 (AnimSequenceType.Explosion, 13, 12, false)
             );
+            
+            hitPointAnimator = new(hitPointAnimations, initialAnimType: AnimSequenceType.Creation);
+            startScreen = new(startButton, playerAnimations, new Point(windowSizeX,windowSizeY));
+            startScreen.StartButtonClicked += StartScreen_StartButtonClicked;
+            gameOverScreen = new(
+                [behEnemyAnimations,batEnemyAnimations,batEnemyAnimations,owlEnemyAnimations],
+                [explosionAnimations], playerAnimations, bossEnemyAnimations, restartButton,
+                font, new(windowSizeX,windowSizeY));
+            gameOverScreen.RestartButtonClicked += GameOverScreen_RestartButtonClicked;
 
             // Enemy details would also be from an external file
             // Defining enemies Default size for now: 60 width. Scaling accordingly.
@@ -151,26 +185,38 @@ namespace LinuxInvaders.Core
             switch (state)
             {
                 case GameState.Start:
+                    backgroundDraw.SwitchBackground(startBackground);
                     break;
                 case GameState.Playing:
+                    backgroundDraw.SwitchBackground(playingBackground);
+                    score = 0;
                     StartNewGame();
                     break;
                 case GameState.GameOver:
+                    if(win) backgroundDraw.SwitchBackground(winBackground);
+                    else backgroundDraw.SwitchBackground(loseBackground);
+                    gameOverScreen.SetUp(win,score);
                     break;
             }
         }
 
+        //Later versions would split this into a Playing class and details in a Level class.
         private void StartNewGame()
         {
             // Reset the game state.
             fireBolts.Clear();
+            score = 0;
+            win = false;
 
             // Only 1 player — no need to separate definitions.
-            player = new PlayerChar(playerAnimations, 
+            int playerStartingLives = 3; // Theoretically set by difficulty
+            player = new PlayerChar(playerAnimations, playerStartingLives,
                 new Vector2((windowSizeX / 2) - (playerAnimations.FrameWidth / 2), 
                 windowSizeY - playerAnimations.FrameHeight), windowSizeX);
             player.OutOfLives += Player_OutOfLives;
             player.Fired += Player_Fired;
+
+            hitPointDisplay = new(hitPointAnimations, new Point(windowSizeX - 10, 10), player.MaxLives);
 
             //In a theoretical full version, a Level struct/class would be appropriate for all of this.
             EnemyDefinition[] lvl1Enemies = {
@@ -182,17 +228,18 @@ namespace LinuxInvaders.Core
             };
             int columns = 6;
             float hitBoxScale = 1.3f;
-            Vector2 startSpeed = new(25f, 20f);
-            Vector2 highSpeed = new(100f, 50f);
+            Vector2 startSpeed = new(60f, 20f);
+            Vector2 highSpeed = new(200f, 60f);
 
             enemies = new(lvl1Enemies, columns, Vector2.Zero, hitBoxScale, startSpeed, highSpeed, 
                 new Point(windowSizeX,windowSizeY), player.Bounds.Top);
-
+            enemies.EnemyHit += Enemies_EnemyHit;
             enemies.EnemyReachedPlayer += Enemy_ReachedBottom;
         }
 
         protected override void Update(GameTime gameTime)
         {
+            //All updating not in this method should be in another class... c'est la vie.
             input.UpdateState(IsActive);
             if(input.IsActionPressed(InputAction.Debug)) debugView = !debugView;
             if (input.IsActionPressed(InputAction.Quit))
@@ -203,30 +250,23 @@ namespace LinuxInvaders.Core
             switch (state)
             {
                 case GameState.Start:
-                    UpdateStart(gameTime);
+                    startScreen.Update(gameTime, input);
                     break;
                 case GameState.Playing:
                     UpdatePlaying(gameTime);
                     break;
                 case GameState.GameOver:
-                    UpdateGameOver(gameTime);
+                    gameOverScreen.Update(gameTime, input);
                     break;
             }
 
             base.Update(gameTime);
         }
 
-        private void UpdateStart(GameTime gameTime)
-        {
-            if (input.IsActionPressed(InputAction.Confirm))
-            {
-                RequestStateChange(GameState.Playing);
-            }
-        }
-
         private void UpdatePlaying(GameTime gameTime)
         {
             enemies.Update(gameTime);
+            if(enemies.EnemiesAlive() < 1) EndGame(true);
 
             player.Update(gameTime, input);
 
@@ -240,17 +280,27 @@ namespace LinuxInvaders.Core
                 }
             }
             fireBolts.RemoveAll(bolt => !bolt.Exists);
-            Window.Title = $"Invaders - Lives: {player.RemainingLives} - Enemies: {enemies.EnemiesAlive()}"; //Remove when there's in-window UI
+            hitPointDisplay.Update(gameTime, player.RemainingLives);
         }
-
-        private void UpdateGameOver(GameTime gameTime)
-        {}
-
+        private void StartScreen_StartButtonClicked(object sender, EventArgs e)
+        {
+            RequestStateChange(GameState.Playing);
+        }
+        private void GameOverScreen_RestartButtonClicked(object sender, EventArgs e)
+        {
+            RequestStateChange(GameState.Playing);
+        }
         private void Player_Fired(object sender, EventArgs e)
         {
             // Build the bolt, reuse the cashed sheet.
             SpriteAnimator boltTexture = new SpriteAnimator(fireBoltAnimations, rotation: FireBolt.UpwardRotation, centerOrigin: true);
             fireBolts.Add(new FireBolt(boltTexture, player.MuzzlePosition));
+        }
+
+        private void Enemies_EnemyHit(object sender, EnemyHitEventArgs e)
+        {
+            if(e.Killed) score += e.Points;
+            // Explosions created here.
         }
 
         private void Enemy_ReachedBottom(object sender, EventArgs e)
@@ -260,6 +310,13 @@ namespace LinuxInvaders.Core
 
         private void Player_OutOfLives(object sender, System.EventArgs e)
         {
+            EndGame(false);
+        }
+
+        private void EndGame(bool win)
+        {
+            if(pendingState != null) return;
+            this.win = win;
             RequestStateChange(GameState.GameOver);
         }
 
@@ -267,42 +324,40 @@ namespace LinuxInvaders.Core
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
+            _spriteBatch.Begin();
+            backgroundDraw.Draw(gameTime, _spriteBatch);
+
             switch (state)
             {
                 case GameState.Start:
-                    DrawStart(gameTime);
+                    startScreen.Draw(_spriteBatch);
                     break;
                 case GameState.Playing:
-                    DrawPlaying(gameTime);
+                    DrawPlaying(gameTime, _spriteBatch);
                     break;
                 case GameState.GameOver:
-                    DrawGameOver(gameTime);
+                    gameOverScreen.Draw(_spriteBatch);
                     break;
             }
 
+            _spriteBatch.End();
             base.Draw(gameTime);
         }
 
-        private void DrawStart(GameTime gameTime)
-        {}
-
-        private void DrawPlaying(GameTime gameTime)
+        private void DrawPlaying(GameTime gameTime, SpriteBatch spriteBatch)
         {
-            _spriteBatch.Begin();
-            enemies.Draw(_spriteBatch, debugView, WhitePixel);
+            enemies.Draw(spriteBatch, debugView, WhitePixel);
 
             foreach (var bolt in fireBolts)
             {
-                bolt.Draw(_spriteBatch, debugView, WhitePixel);
+                bolt.Draw(spriteBatch, debugView, WhitePixel);
             }
 
-            player.Draw(_spriteBatch);
-
-            _spriteBatch.End();
+            player.Draw(spriteBatch);
+            hitPointDisplay.Draw(_spriteBatch);
+            
+            spriteBatch.DrawString(font,score.ToString(), new Vector2(10, 5), Color.LightSteelBlue);
         }
-
-        private void DrawGameOver(GameTime gameTime)
-        {}
 
         protected override void UnloadContent()
         {

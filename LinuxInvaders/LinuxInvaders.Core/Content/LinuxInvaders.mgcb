@@ -229,6 +229,19 @@
 /processorParam:Version=3.8.5.1
 /build:owlEnemy.png
 
+#begin restartButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/processorParam:Version=3.8.5.1
+/build:restartButton.png
+
 #begin smokeSheet.png
 /importer:TextureImporter
 /processor:TextureProcessor

@@ -13,16 +13,19 @@ namespace LinuxInvaders.Core
 		private Rectangle boundingBox;
 		public Rectangle Bounds => new(boundingBox.Location + pos.ToPoint(), boundingBox.Size);
 		private int windowSizeX;
-		public int RemainingLives { get; private set; } = 3;
+		public int MaxLives {get; init;}
+		public int RemainingLives { get; private set; }
 		public event EventHandler OutOfLives;
 		public event EventHandler Fired;
 
 		// Where a shot leaves the player: top edge, horizontally centred.
 		public Vector2 MuzzlePosition => new(pos.X + animationPlayer.FrameWidth / 2f, pos.Y);
 
-		public PlayerChar(AnimationSet animations, Vector2 pos, int windowSizeX)
+		public PlayerChar(AnimationSet animations, int lives, Vector2 pos, int windowSizeX)
 		{
 			animationPlayer = new(animations, initialAnimType: AnimSequenceType.Idle);
+			MaxLives = lives;
+			RemainingLives = lives;
 			this.pos = pos;
 			this.windowSizeX = windowSizeX;
 			boundingBox = new(49,22,69,125); //Should obviously be set outside in a real project

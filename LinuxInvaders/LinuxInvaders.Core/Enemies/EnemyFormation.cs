@@ -8,8 +8,6 @@ namespace LinuxInvaders.Core.Enemies
     {
         private Enemy[,] enemyGrid;
         private bool directionRight = true;
-        private Vector2 topLeft;
-        private Vector2 bottomRight;
         private Point windowSize;
         private Vector2 startSpeed; // Across + down
         private Vector2 highSpeed; // Across + down with leas enemies left
@@ -22,10 +20,7 @@ namespace LinuxInvaders.Core.Enemies
 
         public EnemyFormation(EnemyDefinition[] rowSpread, int columns, Vector2 startPos, 
             float hitBoxScale, Vector2 startSpeed, Vector2 highSpeed, Point windowSize, int reachedEndHeight)
-        {
-            topLeft = startPos;
-            bottomRight = new(columns * gridCellSize, rowSpread.Length * gridCellSize);
-            
+        {            
             enemyGrid = new Enemy[rowSpread.Length,columns];
             for(int row = 0; row < enemyGrid.GetLength(0); row++)
             {
@@ -84,10 +79,10 @@ namespace LinuxInvaders.Core.Enemies
             
             foreach (Enemy enemy in enemyGrid)
             {
-                if(enemy.TakenOut) continue;
+                if(enemy.TakenOut || enemy.Escaped) continue;
                 if(enemy.BottomRight.Y > reachedEndHeight)
                 {
-                    enemy.IgnoreFromNow();
+                    enemy.AnimateMoveOnly();
                     EnemyReachedPlayer?.Invoke(this, EventArgs.Empty);
                     break;
                 }
@@ -133,7 +128,7 @@ namespace LinuxInvaders.Core.Enemies
             return false;
         }
 
-        public void Draw(SpriteBatch spriteBatch, bool debugView = false, Texture2D whitePixel = null)
+        public void Draw(SpriteBatch spriteBatch, bool debugView, Texture2D whitePixel)
         {
             foreach(Enemy enemy in enemyGrid)
             {

@@ -26,12 +26,11 @@ namespace LinuxInvaders.Core.Enemies
 
 		int health;
 
-		// Should it exist? If false: don't update; don't draw; don't anything
+		// Exists = still has any purpose; TakenOut = last animation, no game logic; Escaped = no game logic, just move off the screen
 		public bool Exists { get; private set; } = true;
-
-		// Display as it dies, but no longer treat as present for the game
 		public bool TakenOut { get; private set; } = false;
-		public void IgnoreFromNow() => TakenOut = true; // No longer used, but still displayed
+		public bool Escaped { get; private set;} = false;
+		public void AnimateMoveOnly() => Escaped = true; // No longer used, but still displayed
 		public void Remove() => Exists = false; // Off screen or otherwise removed
 
 

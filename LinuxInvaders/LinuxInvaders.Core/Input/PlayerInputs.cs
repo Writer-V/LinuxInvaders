@@ -15,7 +15,7 @@ namespace LinuxInvaders.Core.Input
         {
             [InputAction.MoveLeft]  = new[] {new InputBinding(Keys.Left), new InputBinding(Keys.A)},
             [InputAction.MoveRight] = new[] {new InputBinding(Keys.Right), new InputBinding(Keys.D)},
-            [InputAction.Fire]      = new[] {new InputBinding(Keys.Space)},
+            [InputAction.Fire]      = new[] {new InputBinding(Keys.Space), new InputBinding(MouseButton.Left)},
             [InputAction.Confirm]   = new[] {new InputBinding(Keys.Enter)},
             [InputAction.Quit]      = new[] {new InputBinding(Keys.Escape)},
             [InputAction.Debug]     = new[] {new InputBinding(Keys.F9)}

@@ -22,6 +22,7 @@ namespace LinuxInvaders.Core.Graphics
 		public float Rotation { get; set; }
 		public float Scale { get; set; }
 		public float Depth { get; set; }
+		public bool IsLoopingAnim => clip.Loop;
 		private Vector2 origin; //For rotation
 		public event EventHandler  FinishedAnim;
 		public SpriteAnimator(AnimationSet animationSet, float rotation = 0f, float depth = 0f, float scale = 1f,
