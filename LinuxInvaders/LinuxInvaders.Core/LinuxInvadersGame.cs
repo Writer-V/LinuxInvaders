@@ -5,6 +5,8 @@ using LinuxInvaders.Core.Input;
 using LinuxInvaders.Core.Graphics;
 using System;
 using LinuxInvaders.Core.Enemies;
+using Microsoft.Xna.Framework.Media;
+using Microsoft.Xna.Framework.Audio;
 
 namespace LinuxInvaders.Core
 {
@@ -38,7 +40,6 @@ namespace LinuxInvaders.Core
         private AnimationSet fireBoltAnimations; // Player projectile — 4 frames, 5 rows (orange, purple, green, red, blue)
         private AnimationSet enemyBoltAnimations; //Enemy projectile — Row 1: creation (6 frames), Row2: travel (3 frames)
         private AnimationSet explosionAnimations; //Explosion animation — 13 frames
-        private SpriteAnimator hitPointAnimator; // For the HUD
         private SpriteFont font;
         private Texture2D startButton;
         private Texture2D restartButton;
@@ -48,6 +49,18 @@ namespace LinuxInvaders.Core
         private Texture2D winBackground;
         private Texture2D loseBackground;
         private Texture2D WhitePixel; //Just used for debugging
+        private Song startBackgroundSong;
+        private Song gameBackgroundSong;
+        private Song winBackgroundSong;
+        private Song loseBackgroundSong;
+        private SoundEffect batDeathSound;
+        private SoundEffect behDeathSound;
+        private SoundEffect owlDeathSound;
+        private SoundEffect boltHitSound;
+        private SoundEffect boltLaunchedSound;
+        private SoundEffect enemyReachedBottomSound;
+        private SoundEffect playerDeathSound;
+        private SoundEffect buttonPressSound;
 
         private Dictionary<EnemyType, EnemyDefinition> EnemyDefined;
 
@@ -152,8 +165,7 @@ namespace LinuxInvaders.Core
                 100, AnimSequenceType.Explosion,
                 (AnimSequenceType.Explosion, 13, 12, false)
             );
-            
-            hitPointAnimator = new(hitPointAnimations, initialAnimType: AnimSequenceType.Creation);
+
             startScreen = new(startButton, playerAnimations, new Point(windowSizeX,windowSizeY));
             startScreen.StartButtonClicked += StartScreen_StartButtonClicked;
             gameOverScreen = new(
@@ -161,6 +173,23 @@ namespace LinuxInvaders.Core
                 [explosionAnimations], playerAnimations, bossEnemyAnimations, restartButton,
                 font, new(windowSizeX,windowSizeY));
             gameOverScreen.RestartButtonClicked += GameOverScreen_RestartButtonClicked;
+
+            startBackgroundSong = Content.Load<Song>("startBgMusic");
+            gameBackgroundSong = Content.Load<Song>("gameBgMusic");
+            winBackgroundSong = Content.Load<Song>("winBgMusic");
+            loseBackgroundSong = Content.Load<Song>("lostBgMusic");
+            batDeathSound = Content.Load<SoundEffect>("batDies");
+            behDeathSound = Content.Load<SoundEffect>("behDeath");
+            owlDeathSound = Content.Load<SoundEffect>("owlDeath");
+            boltHitSound = Content.Load<SoundEffect>("boldHit");
+            boltLaunchedSound = Content.Load<SoundEffect>("boltShhot");
+            enemyReachedBottomSound = Content.Load<SoundEffect>("enemyReachedBottom");
+            playerDeathSound = Content.Load<SoundEffect>("playerDeath");
+            buttonPressSound = Content.Load<SoundEffect>("buttonConfirm");
+
+            MediaPlayer.Play(startBackgroundSong);
+            MediaPlayer.IsRepeating = true;
+            MediaPlayer.Volume = 0.6f;
 
             // Enemy details would also be from an external file
             // Defining enemies Default size for now: 60 width. Scaling accordingly.
@@ -186,15 +215,25 @@ namespace LinuxInvaders.Core
             {
                 case GameState.Start:
                     backgroundDraw.SwitchBackground(startBackground);
+                    MediaPlayer.Play(startBackgroundSong);
                     break;
                 case GameState.Playing:
                     backgroundDraw.SwitchBackground(playingBackground);
+                    MediaPlayer.Play(gameBackgroundSong);
                     score = 0;
                     StartNewGame();
                     break;
                 case GameState.GameOver:
-                    if(win) backgroundDraw.SwitchBackground(winBackground);
-                    else backgroundDraw.SwitchBackground(loseBackground);
+                    if(win)
+                    {
+                        backgroundDraw.SwitchBackground(winBackground);
+                        MediaPlayer.Play(winBackgroundSong);
+                    }
+                    else
+                    {
+                        backgroundDraw.SwitchBackground(loseBackground);
+                        MediaPlayer.Play(loseBackgroundSong);
+                    }
                     gameOverScreen.SetUp(win,score);
                     break;
             }
@@ -284,10 +323,12 @@ namespace LinuxInvaders.Core
         }
         private void StartScreen_StartButtonClicked(object sender, EventArgs e)
         {
+            buttonPressSound.Play(1, 0, 0);
             RequestStateChange(GameState.Playing);
         }
         private void GameOverScreen_RestartButtonClicked(object sender, EventArgs e)
         {
+            buttonPressSound.Play(1,0,0);
             RequestStateChange(GameState.Playing);
         }
         private void Player_Fired(object sender, EventArgs e)
@@ -295,21 +336,30 @@ namespace LinuxInvaders.Core
             // Build the bolt, reuse the cashed sheet.
             SpriteAnimator boltTexture = new SpriteAnimator(fireBoltAnimations, rotation: FireBolt.UpwardRotation, centerOrigin: true);
             fireBolts.Add(new FireBolt(boltTexture, player.MuzzlePosition));
+            boltLaunchedSound.Play((5 + Random.Shared.Next(2))/10f, Random.Shared.Next(2)/10f - 0.9f, 0);
         }
 
         private void Enemies_EnemyHit(object sender, EnemyHitEventArgs e)
         {
-            if(e.Killed) score += e.Points;
-            // Explosions created here.
+            boltHitSound.Play((5 + Random.Shared.Next(2))/10f, Random.Shared.Next(2)/10f - 0.9f, 0);
+            if(e.Killed)
+            {
+                score += e.Points;
+                if(e.Type == EnemyType.Bat) batDeathSound.Play((6 + Random.Shared.Next(4))/10f, Random.Shared.Next(3)/10f - 0.9f, 0);
+                else if(e.Type == EnemyType.Beholder) behDeathSound.Play((5 + Random.Shared.Next(5))/10f, Random.Shared.Next(3)/10f - 0.9f, 0);
+                else if(e.Type == EnemyType.Owl) owlDeathSound.Play((7 + Random.Shared.Next(3))/10f, Random.Shared.Next(2)/10f - 0.9f, 0);
+            }
         }
 
         private void Enemy_ReachedBottom(object sender, EventArgs e)
         {
+            enemyReachedBottomSound.Play(1, Random.Shared.Next(2)/10f - 0.9f, 0);
             player.Damage();
         }
 
         private void Player_OutOfLives(object sender, System.EventArgs e)
         {
+            playerDeathSound.Play(1,0,0);
             EndGame(false);
         }
 

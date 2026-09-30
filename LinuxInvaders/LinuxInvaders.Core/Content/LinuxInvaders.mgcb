@@ -39,6 +39,13 @@
 /processorParam:Version=3.8.5.1
 /build:barrierSheet.png
 
+#begin batDies.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:batDies.mp3
+
 #begin batEnemy.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -65,6 +72,13 @@
 /processorParam:Version=3.8.5.1
 /build:beh_64_idle.png
 
+#begin behDeath.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:behDeath.mp3
+
 #begin behEnemy.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -78,6 +92,20 @@
 /processorParam:Version=3.8.5.1
 /build:behEnemy.png
 
+#begin boldHit.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:boldHit.mp3
+
+#begin boltShhot.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:boltShhot.mp3
+
 #begin bossEnemy.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -90,6 +118,13 @@
 /processorParam:TextureFormat=Color
 /processorParam:Version=3.8.5.1
 /build:bossEnemy.png
+
+#begin buttonConfirm.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:buttonConfirm.mp3
 
 #begin earlyBackground.png
 /importer:TextureImporter
@@ -116,6 +151,13 @@
 /processorParam:TextureFormat=Color
 /processorParam:Version=3.8.5.1
 /build:enemyBolt.png
+
+#begin enemyReachedBottom.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:enemyReachedBottom.mp3
 
 #begin explosionSheet.png
 /importer:TextureImporter
@@ -177,6 +219,13 @@
 /processorParam:Version=3.8.5.1
 /build:gameBackground.png
 
+#begin gameBgMusic.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:gameBgMusic.mp3
+
 #begin hitPoint.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -203,6 +252,13 @@
 /processorParam:Version=3.8.5.1
 /build:introBackground.png
 
+#begin lostBgMusic.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:lostBgMusic.mp3
+
 #begin mageAnim.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -216,6 +272,13 @@
 /processorParam:Version=3.8.5.1
 /build:mageAnim.png
 
+#begin owlDeath.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:owlDeath.mp3
+
 #begin owlEnemy.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -228,6 +291,13 @@
 /processorParam:TextureFormat=Color
 /processorParam:Version=3.8.5.1
 /build:owlEnemy.png
+
+#begin playerDeath.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:playerDeath.mp3
 
 #begin restartButton.png
 /importer:TextureImporter
@@ -255,6 +325,13 @@
 /processorParam:Version=3.8.5.1
 /build:smokeSheet.png
 
+#begin startBgMusic.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:startBgMusic.mp3
+
 #begin Startknapp.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -280,6 +357,13 @@
 /processorParam:TextureFormat=Color
 /processorParam:Version=3.8.5.1
 /build:successBackground.png
+
+#begin winBgMusic.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/processorParam:Version=3.8.5.1
+/build:winBgMusic.mp3
 
 #begin wizardSheet.png
 /importer:TextureImporter
