@@ -17,6 +17,7 @@ namespace LinuxInvaders.Core
         private PlayerInputs input = new PlayerInputs();
         private EnemyFormation enemies;
         private List<FireBolt> fireBolts = new List<FireBolt>();
+        private List<PlacedEffect> explosions = new List<PlacedEffect>();
         private PlayerChar player;
         private HitPointDisplay hitPointDisplay;
         private int score = 0;
@@ -211,6 +212,7 @@ namespace LinuxInvaders.Core
         {
             state = newState;
             pendingState = null;
+            explosions.Clear();
             switch (state)
             {
                 case GameState.Start:
@@ -318,7 +320,11 @@ namespace LinuxInvaders.Core
                     continue;
                 }
             }
+            foreach (PlacedEffect explosion in explosions)
+                explosion.Update(gameTime);
+            
             fireBolts.RemoveAll(bolt => !bolt.Exists);
+            explosions.RemoveAll(explosion => !explosion.Exists);
             hitPointDisplay.Update(gameTime, player.RemainingLives);
         }
         private void StartScreen_StartButtonClicked(object sender, EventArgs e)
@@ -345,6 +351,7 @@ namespace LinuxInvaders.Core
             if(e.Killed)
             {
                 score += e.Points;
+                explosions.Add(new(explosionAnimations, e.Location));
                 if(e.Type == EnemyType.Bat) batDeathSound.Play((6 + Random.Shared.Next(4))/10f, Random.Shared.Next(3)/10f - 0.9f, 0);
                 else if(e.Type == EnemyType.Beholder) behDeathSound.Play((5 + Random.Shared.Next(5))/10f, Random.Shared.Next(3)/10f - 0.9f, 0);
                 else if(e.Type == EnemyType.Owl) owlDeathSound.Play((7 + Random.Shared.Next(3))/10f, Random.Shared.Next(2)/10f - 0.9f, 0);
@@ -399,10 +406,9 @@ namespace LinuxInvaders.Core
             enemies.Draw(spriteBatch, debugView, WhitePixel);
 
             foreach (var bolt in fireBolts)
-            {
                 bolt.Draw(spriteBatch, debugView, WhitePixel);
-            }
-
+            foreach (PlacedEffect explosion in explosions)
+                explosion.Draw(spriteBatch);
             player.Draw(spriteBatch);
             hitPointDisplay.Draw(_spriteBatch);
             

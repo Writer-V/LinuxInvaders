@@ -63,8 +63,13 @@ namespace LinuxInvaders.Core.Enemies
 			if(health < 1)
 			{
 				TakenOut = true;
-				animationPlayer.PlayOnce(AnimSequenceType.Death);
-				animationPlayer.FinishedAnim += DeathAnimationFinished;
+				if(animationPlayer.HasAnimType(AnimSequenceType.Death))
+				{
+					animationPlayer.PlayOnce(AnimSequenceType.Death);
+					animationPlayer.FinishedAnim += DeathAnimationFinished;
+				}
+				else Exists = false;
+				
 				return 0; //It got killed
 			}
 			else animationPlayer.PlayOnce(AnimSequenceType.Hit, true);

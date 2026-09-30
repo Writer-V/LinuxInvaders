@@ -14,6 +14,7 @@ namespace LinuxInvaders.Core.Graphics
 		private int currentFrame = 0;
 		public int FrameWidth => animationSet.FrameWidth;
 		public int FrameHeight => animationSet.FrameHeight;
+		public bool HasAnimType(AnimSequenceType t) => animationSet.HasAnimType(t);
 		// Intended AnimSequenceType, even if actual clip needs a fallback
 		private AnimSequenceType baseSequence;
 		private PlaybackMode state;
